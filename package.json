@@ -1,7 +1,7 @@
 {
   "name": "virtual-sim-game",
-  "version": "1.0.0",
-  "description": "Virtual Sim Hangout — Open World Game",
+  "version": "1.1.0",
+  "description": "Virtual Sim — Open World: lore, HUB tower, interiors (C++/WASM), game AI, symbiotes, combat, quests, pets",
   "main": "api/index.js",
   "scripts": {
     "dev": "vercel dev",

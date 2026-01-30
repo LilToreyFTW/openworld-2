@@ -23,7 +23,8 @@ class Enemy {
       'basic': 50,
       'bandit': 75,
       'alien': 100,
-      'boss': 500
+      'boss': 500,
+      'symbiote': 100
     };
     return baseHealth[this.type] || 50;
   }
@@ -33,7 +34,8 @@ class Enemy {
       'basic': 5,
       'bandit': 8,
       'alien': 12,
-      'boss': 25
+      'boss': 25,
+      'symbiote': 10
     };
     return baseDamage[this.type] || 5;
   }
@@ -43,7 +45,8 @@ class Enemy {
       'basic': 3,
       'bandit': 4,
       'alien': 5,
-      'boss': 2
+      'boss': 2,
+      'symbiote': 4
     };
     return baseSpeed[this.type] || 3;
   }
@@ -53,7 +56,8 @@ class Enemy {
       'basic': 20,
       'bandit': 22,
       'alien': 25,
-      'boss': 40
+      'boss': 40,
+      'symbiote': 26
     };
     return baseRadius[this.type] || 20;
   }
@@ -63,12 +67,23 @@ class Enemy {
       'basic': 0xff4444,
       'bandit': 0xff8800,
       'alien': 0x00ff00,
-      'boss': 0xff0000
+      'boss': 0xff0000,
+      'symbiote': 0x1a1a2e
     };
     return colors[this.type] || 0xff4444;
   }
 
   takeDamage(amount) {
+    if (this.type === 'symbiote' && typeof VenomBody !== 'undefined' && this.venomBody) {
+      if (this.venomBody.absorb_damage(amount)) {
+        this.health = 0;
+        this.alive = false;
+        return true;
+      }
+      this.health = this.venomBody.health;
+      this.lastDamageTime = Date.now();
+      return false;
+    }
     this.health = Math.max(0, this.health - amount);
     this.lastDamageTime = Date.now();
     if (this.health <= 0) {
@@ -122,8 +137,24 @@ class CombatSystem {
     this.autoAttackEnabled = false;
   }
 
-  spawnEnemy(x, y, type = 'basic') {
+  spawnEnemy(x, y, type = 'basic', options = {}) {
     const enemy = new Enemy(x, y, type);
+    if (type === 'symbiote' && typeof VenomBody !== 'undefined') {
+      const symbioteName = options.name || options.symbioteName || 'Venom';
+      const symb = typeof getSymbioteByName !== 'undefined' ? getSymbioteByName(symbioteName) : null;
+      enemy.symbioteName = symbioteName;
+      enemy.venomBody = new VenomBody({
+        x, y,
+        health: enemy.health,
+        symbioteKey: symbioteName,
+        skin_texture: (symb && symb.color) ? symb.color + '_pulsating_symbiote' : 'black_pulsating_symbiote',
+        tendrilCount: 8,
+        onLoseForm: () => { enemy.alive = false; }
+      });
+      if (symb && typeof SYMBIOTE_COLORS !== 'undefined' && SYMBIOTE_COLORS[symb.color] != null) {
+        enemy.color = SYMBIOTE_COLORS[symb.color];
+      }
+    }
     this.enemies.push(enemy);
     return enemy;
   }
@@ -154,15 +185,26 @@ class CombatSystem {
       }
       
       enemy.update(playerX, playerY, deltaTime);
+      if (enemy.venomBody && enemy.venomBody.is_in_symbiote_mode) {
+        enemy.venomBody.x = enemy.x;
+        enemy.venomBody.y = enemy.y;
+        enemy.venomBody.update(deltaTime / 1000);
+        if (typeof animateAbilities === 'function') {
+          const symb = enemy.venomBody.getSymbiote();
+          if (symb) animateAbilities(symb, enemy.venomBody, deltaTime / 1000);
+        }
+      }
       
       // Update enemy mesh position
       if (enemy.mesh) {
         enemy.mesh.position.set(enemy.x, enemy.y, -0.04);
         
-        // Flash red when damaged
         const timeSinceDamage = Date.now() - enemy.lastDamageTime;
         if (timeSinceDamage < 200) {
           enemy.mesh.material.color.setHex(0xffffff);
+        } else if (enemy.type === 'symbiote' && enemy.venomBody && typeof applySymbioteMaterial === 'function') {
+          const symb = enemy.venomBody.getSymbiote();
+          if (symb) applySymbioteMaterial(symb, enemy.mesh, enemy.venomBody.getPulse());
         } else {
           enemy.mesh.material.color.setHex(enemy.color);
         }

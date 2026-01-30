@@ -3,6 +3,10 @@ project(VirtualSimGameServer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Building interior generation (shared logic; used by server or Emscripten/WASM for HTML game)
+add_library(interior_gen STATIC InteriorGen.cpp)
+target_include_directories(interior_gen PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Full-stack game executable (HTTP server + game logic)
 add_executable(virtualsim_game
   GameServerMain.cpp

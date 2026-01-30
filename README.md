@@ -1,6 +1,21 @@
 # Virtual Sim — Main Game
 
-Single-page + hub game: **main menu → character creation → Doom Patrol Mission (intro) → Doom Patrol Tower (hub)** with travel, quests, missions, multiplayer (C++ server), weapons/prestige camos, and 7 planets.
+Open-world game: **main menu → character creation → Doom Patrol Mission (intro) → Doom Patrol Tower (hub)** with travel, quests, combat, symbiotes, game AI, building interiors, and 7 planets.
+
+## Game features
+
+- **Lore & Codex** — 50 intro sentences (single source), cinematic crawl, Codex/Lore panel in hub.
+- **Doom Patrol Tower (HUB)** — Center at (0,0); interior **4 km × 2 km**, **3 levels**, stairs, reception desks, pillars; camera follows player inside.
+- **Building interiors** — All buildings enterable; interiors generated in **C++** (optional WASM) or JS fallback; floor, tiles, walls, windows, furniture (houses: beds/tables; city: desks/cabinets).
+- **Game AI (Buckland)** — State machines (Idle/Wander/Patrol), steering (Seek, Flee, Wander, Arrive), A* pathfinding; NPCs at hangouts use state + steering.
+- **Symbiotes** — Venom, Agony, Lasher, Toxin, Phage, Carnage, Scream, Riot, Blue, White; unique material per color, ability animation (regeneration, tentacles, super_speed); VenomBody + Tendril.
+- **Combat** — Enemies (basic, bandit, alien, boss, symbiote); player attack, auto-attack, quest kill tracking; symbiote enemies use VenomBody and absorb_damage.
+- **Quests** — 50 quests (25 land, 25 space), lore-themed titles/descriptions, markers, trails, rewards.
+- **Pets** — Owned pets, summon/dismiss, skills, settings (evolution, teleport, speed, healing), gold purchases.
+- **Achievements** — Lore-themed names, kill/quest/level/weapon/gold milestones.
+- **Weather** — ExtraSunny, Sunny, Morning, Noon, Midnight, Night, Summer; scene/street/building tint.
+- **Multiplayer & matchmaking** — ONE server, 5v5 modes (TDM, Domination, CTF, S&D), lobby UI.
+- **Weapons & shop** — 50 weapons, prestige, camos; shop gold, items; toolbelt, XP, level.
 
 ## How to play
 
@@ -34,11 +49,16 @@ game.html (Main Menu)
 | File | Purpose |
 |------|--------|
 | **game.html** | Main game entry: menu, character creation, Doom Patrol intro mission |
-| **index.html** | Doom Patrol Tower hub — 10 km × 10 km open world, hangouts, travel links |
+| **index.html** | Doom Patrol Tower hub — 10 km × 10 km open world, HUB 4km×2km 3 levels, hangouts, NPC AI, combat, symbiotes |
 | **haveila.html** | Haveila lava planet — 2560×1080, music-driven gradient animation |
 | **weapon-camos.html** | Armory — 50 weapons × 10 prestige gradient animated camos |
+| **lore.js** | 50 intro sentences (single source); used by crawl, Codex, quests, achievements |
+| **symbiote.js** | SYMBIOTES roster (Venom, Agony, Lasher, Toxin, etc.), VenomBody, Tendril, applySymbioteMaterial, animateAbilities |
+| **game-ai-*.js** | Buckland-style: Vector2D, state machine, steering (Seek/Flee/Wander/Arrive), A* pathfinder, GameAIAgent |
+| **interior-wasm.js** | Adapter for C++ building interiors (WASM); fallback to JS interiors |
+| **combat.js** | CombatSystem, Enemy (basic/bandit/alien/boss/symbiote), symbiote VenomBody integration |
 | **game-soundtrack/** | Main game soundtrack (used in hub + Haveila) |
-| **cpp/** | Game server: 25 land + 25 space quests, missions, 50 weapons, prestige, TDM/Dom/CTF/S&D, Zombies, 7 planets |
+| **cpp/** | Game server + InteriorGen (building interiors); 25 land + 25 space quests, missions, 50 weapons, TDM/Dom/CTF/S&D, Zombies |
 
 ## ONE SERVER (shared world — like Destiny 2)
 

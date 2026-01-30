@@ -345,6 +345,13 @@
   <script src="settings.js"></script>
   <script src="shop.js"></script>
   <script src="lore.js"></script>
+  <script src="interior-wasm.js"></script>
+  <script src="game-ai-vector2d.js"></script>
+  <script src="game-ai-state.js"></script>
+  <script src="game-ai-steering.js"></script>
+  <script src="game-ai-pathfinder.js"></script>
+  <script src="game-ai.js"></script>
+  <script src="symbiote.js"></script>
   <script src="achievements.js"></script>
   <script src="pets.js"></script>
 </head>
@@ -793,6 +800,9 @@
     console.log(`Scene children count: ${scene.children.length}`);
     console.log(`First building color: ${buildingMeshes[0]?.material?.color?.getHex()}`);
     console.log(`First street color: ${streetMeshes[0]?.material?.color?.getHex()}`);
+    if (typeof window.tryLoadCppInterior === 'function') {
+      window.tryLoadCppInterior(loaded => { if (loaded) console.log('C++ interior (WASM) loaded'); });
+    }
 
     // —— Hangout zones (name, x, y, radius) — 10km scale ——
     const zoneR = 400;
@@ -821,7 +831,7 @@
       const mesh = new THREE.Mesh(g, m);
       mesh.position.set(x, y, -0.03);
       scene.add(mesh);
-      npcs.push({ x, y, color });
+      npcs.push({ x, y, color, mesh });
     }
     createNPC(150, 150, 0xffb6c1);
     createNPC(-150, -80, 0x98fb98);
@@ -831,6 +841,25 @@
     createNPC(0, 3500, 0xffa07a);
     createNPC(-2000, -3500, 0x7fffd4);
     createNPC(3800, 0, 0xd8bfd8);
+
+    // Game AI (Buckland Ch2 state machines + Ch3 steering): agents for hangout NPCs
+    const npcMargin = 400;
+    const npcWorldBounds = {
+      minX: -WORLD_SIZE / 2 + npcMargin,
+      maxX: WORLD_SIZE / 2 - npcMargin,
+      minY: -WORLD_SIZE / 2 + npcMargin,
+      maxY: WORLD_SIZE / 2 - npcMargin
+    };
+    let npcAgents = [];
+    if (typeof window.GameAICreateAgentsForNPCs === 'function') {
+      npcAgents = window.GameAICreateAgentsForNPCs(npcs, {
+        bounds: npcWorldBounds,
+        useWander: true,
+        maxSpeed: 45,
+        maxForce: 90
+      });
+      window.npcAgents = npcAgents;
+    }
 
     // Store references for weather updates
     window.buildingMeshes = buildingMeshes;
@@ -1530,14 +1559,23 @@
     }
 
     function generateBuildingInterior(building) {
-      // HUB tower: use dedicated 4km x 2km, 3-level interior
-      if (building.isHubTower) {
-        return generateHubTowerInterior(building);
-      }
       // Clear any existing interior
       buildingInteriorMeshes.forEach(mesh => scene.remove(mesh));
       buildingInteriorMeshes = [];
-      
+      // Try C++ interior (WASM) first — all building interiors coded in C++
+      if (typeof window.buildInteriorFromCpp === 'function') {
+        const hubLevel = building.isHubTower ? hubInteriorLevel : 0;
+        const result = window.buildInteriorFromCpp(THREE, scene, building, hubLevel, buildingInteriorMeshes);
+        if (result) {
+          buildingInteriorBounds = result.bounds;
+          interiorCameraOffset = result.center;
+          return buildingInteriorBounds;
+        }
+      }
+      // Fallback: JS interior generation
+      if (building.isHubTower) {
+        return generateHubTowerInterior(building);
+      }
       // Interior dimensions (scaled down from exterior)
       const interiorWidth = building.w * 0.85;
       const interiorDepth = building.d * 0.85;
@@ -1886,6 +1924,8 @@
         if (line) line.visible = false;
       });
       
+      npcs.forEach(npc => { if (npc.mesh) npc.mesh.visible = false; });
+      
       // Hide pet when entering building
       if (petMesh) {
         petMesh.visible = false;
@@ -1966,6 +2006,8 @@
       questTrails.forEach(({ line }) => {
         if (line) line.visible = true;
       });
+      
+      npcs.forEach(npc => { if (npc.mesh) npc.mesh.visible = true; });
       
       // Show pet again when exiting building
       if (petMesh) {
@@ -2285,6 +2327,17 @@
       // Update player mesh position (always visible, including inside buildings)
       player.position.set(playerState.x, playerState.y, 0);
       player.visible = true; // Ensure player is always visible
+
+      // Game AI (Buckland Ch2 state + Ch3 steering): update NPC agents when in world
+      if (!playerInsideBuilding && window.npcAgents && window.npcAgents.length) {
+        const deltaTime = 0.016;
+        window.npcAgents.forEach(({ npc, agent }) => {
+          agent.update(deltaTime);
+          npc.x = agent.getX();
+          npc.y = agent.getY();
+          if (npc.mesh) npc.mesh.position.set(npc.x, npc.y, npc.mesh.position.z);
+        });
+      }
       
       // Update pet position (follows player with smooth offset)
       if (petMesh && !playerInsideBuilding && window.petSystem) {
@@ -2745,6 +2798,12 @@
       // Spawn some enemies around the map
       combatSystem.spawnEnemyWave(5, 500, 500, 200, 'basic');
       combatSystem.spawnEnemyWave(3, -800, -600, 150, 'bandit');
+      combatSystem.spawnEnemyWave(2, -1200, 800, 180, 'symbiote');
+      if (typeof combatSystem.spawnEnemy === 'function') {
+        combatSystem.spawnEnemy(-1100, 900, 'symbiote', { name: 'Agony' });
+        combatSystem.spawnEnemy(-1300, 700, 'symbiote', { name: 'Lasher' });
+        combatSystem.spawnEnemy(-1200, 950, 'symbiote', { name: 'Toxin' });
+      }
       
       // Create enemy meshes
       combatSystem.enemies.forEach(enemy => {
