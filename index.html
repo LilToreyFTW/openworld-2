@@ -64,6 +64,50 @@
       opacity: 1;
       transform: translateY(0);
     }
+    #dialogue-toast {
+      position: fixed;
+      bottom: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 420px;
+      background: rgba(80,40,120,0.95);
+      color: #f5e6a3;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      z-index: 150;
+      border: 1px solid rgba(245,230,163,0.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    #dialogue-toast.visible {
+      opacity: 1;
+    }
+    #hub-signs {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      display: none;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 90;
+    }
+    #hub-signs.visible { display: flex; }
+    #hub-signs .sign-panel {
+      background: rgba(20,20,40,0.85);
+      border: 1px solid rgba(100,180,255,0.35);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #b8e0ff;
+      max-width: 200px;
+    }
+    #hub-signs .sign-panel.containment { border-color: rgba(255,180,80,0.5); color: #ffb450; }
     #status {
       display: flex;
       justify-content: space-between;
@@ -345,6 +389,7 @@
   <script src="settings.js"></script>
   <script src="shop.js"></script>
   <script src="lore.js"></script>
+  <script src="dialogue.js"></script>
   <script src="interior-wasm.js"></script>
   <script src="game-ai-vector2d.js"></script>
   <script src="game-ai-state.js"></script>
@@ -392,6 +437,8 @@
   </div>
   <div id="level-up-notif" class="level-up-notif">Level Up!</div>
   <div id="building-prompt">Press E to enter building</div>
+  <div id="dialogue-toast" aria-live="polite"></div>
+  <div id="hub-signs" aria-label="Tower signs"></div>
   <div id="ui">
     <div id="title">Doom Patrol Tower — TOWER HUB · Gatherings Area</div>
     <p id="hub-subtitle" style="align-self: flex-start; margin-top: 4px; margin-left: 0; font-size: 11px; opacity: 0.85;">First hub after Doom Patrol Mission (intro). 7 Planets: Maruno · Sasfire · Dreadnaught IX · Haveila · Nexus Prime · Void's Edge</p>
@@ -483,6 +530,7 @@
     </div>
     <p style="color: #888; font-size: 12px; margin-bottom: 12px;">Words from the intro. The land remembers every war, every fall, every silence.</p>
     <div id="codex-sentences" style="font-family: Georgia, serif; font-size: 14px; line-height: 2; color: #f5e6a3; text-shadow: 0 0 8px rgba(245,230,163,0.3);"></div>
+    <div id="codex-story" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(245,230,163,0.3); font-size: 12px; color: #b8e0ff; line-height: 1.6;"></div>
   </div>
 
   <!-- Pet Skills UI -->
@@ -1404,6 +1452,7 @@
     let interiorCameraOffset = { x: 0, y: 0 };
     const buildingOldBounds = new Map(); // Store oldBounds by building ID
     let hubInteriorLevel = 0; // 0, 1, or 2 when inside HUB tower
+    let hubWardenPosition = null; // Warden NPC position when inside hub
 
     function generateHubTowerInterior(building) {
       // HUB tower: 4km x 2km interior, 3 levels
@@ -1555,7 +1604,22 @@
         maxY: cy + interiorDepth/2 - wallThickness - 80
       };
       interiorCameraOffset = { x: cx, y: cy };
+      // Warden NPC position (restricted-zone patrol guard)
+      hubWardenPosition = { x: cx - 600, y: cy + 300 };
+      updateHubSigns();
       return buildingInteriorBounds;
+    }
+
+    function updateHubSigns() {
+      const signsEl = document.getElementById('hub-signs');
+      if (!signsEl) return;
+      const exhibits = (window.TOWER_SIGNS && window.TOWER_SIGNS.exhibits) ? window.TOWER_SIGNS.exhibits.slice(0, 2) : [];
+      const containment = (window.TOWER_SIGNS && window.TOWER_SIGNS.containment) ? window.TOWER_SIGNS.containment.slice(0, 1) : [];
+      const dirOpts = window.DIRECTIONAL_OPTIONS || {};
+      const navLine = [dirOpts.NORTH, dirOpts.SOUTH].filter(Boolean).join(' / ') + ' (stairs) · ' + [dirOpts.EAST, dirOpts.WEST].filter(Boolean).join(' / ') + ' (wings)';
+      signsEl.innerHTML = 
+        '<div class="sign-panel">' + (exhibits.join('<br>') || 'Exhibit area') + '</div>' +
+        '<div class="sign-panel containment">' + (containment.join('<br>') || 'Containment zone') + (navLine ? '<br><span style="font-size: 10px; opacity: 0.9;">' + navLine + '</span>' : '') + '</div>';
     }
 
     function generateBuildingInterior(building) {
@@ -1959,6 +2023,13 @@
           : `Press E to exit ${building.isHouse ? 'house' : 'building'}`;
         buildingPromptEl.classList.add('visible');
       }
+      // Hub-only: exhibit signs and Warden NPC position
+      if (building.isHubTower) {
+        if (!hubWardenPosition) hubWardenPosition = { x: building.x - 600, y: building.y + 300 };
+        updateHubSigns();
+        const hubSignsEl = document.getElementById('hub-signs');
+        if (hubSignsEl) hubSignsEl.classList.add('visible');
+      }
       
       console.log(`Entered building ${building.id} at (${building.x}, ${building.y})`);
     }
@@ -2043,6 +2114,9 @@
       buildingInteriorBounds = null;
       
       playerInsideBuilding = null;
+      hubWardenPosition = null;
+      const hubSignsEl = document.getElementById('hub-signs');
+      if (hubSignsEl) hubSignsEl.classList.remove('visible');
       const buildingPromptEl = document.getElementById('building-prompt');
       if (buildingPromptEl) {
         buildingPromptEl.classList.remove('visible');
@@ -2497,6 +2571,15 @@
           buildingPromptEl.classList.remove('visible');
         }
       } else {
+        // Inside building: Warden NPC (hub only) — E to talk
+        if (playerInsideBuilding && hubWardenPosition && (keys.e || keys.E)) {
+          const d = Math.hypot(playerState.x - hubWardenPosition.x, playerState.y - hubWardenPosition.y);
+          if (d < 120) {
+            if (typeof showWardenDialogue === 'function') showWardenDialogue();
+            keys.e = false;
+            keys.E = false;
+          }
+        }
         // Inside building - check for exit
         if ((keys.e || keys.E) && playerInsideBuilding) {
           exitBuilding();
@@ -2549,12 +2632,15 @@
       if (window.combatSystem) {
         const deltaTime = 0.016;
         combatSystem.update(playerState.x, playerState.y, deltaTime);
-        
-        // Check for enemy kills and update quest progress
-        const killedEnemies = combatSystem.enemies.filter(e => !e.alive);
-        killedEnemies.forEach(() => {
+        // Use lastKilledThisFrame (enemies removed this frame) for kill callbacks
+        const killedEnemies = combatSystem.lastKilledThisFrame || [];
+        let rivalVictoryLine = null;
+        killedEnemies.forEach(enemy => {
           if (window.achievementManager) window.achievementManager.recordKill();
-          
+          if (enemy.isRival && typeof getBattleLocationKey === 'function' && typeof getRivalVictoryLine === 'function') {
+            const loc = getBattleLocationKey(playerInsideBuilding, hubInteriorLevel, false);
+            rivalVictoryLine = getRivalVictoryLine(loc);
+          }
           // Give pet experience from kills (if pet is active and XP gain enabled)
           if (window.petSystem) {
             const activePet = window.petSystem.getActivePet();
@@ -2562,24 +2648,21 @@
               window.petSystem.addExperienceFromKill(activePet.id, 1);
             }
           }
-          
           // Update quest progress for kill objectives
           const questMgr3 = window.questManager || (typeof questManager !== 'undefined' ? questManager : null);
           if (questMgr3) {
             const activeQuests = questMgr3.getActiveQuests();
             activeQuests.forEach(quest => {
               quest.progress.forEach((obj, idx) => {
-                if (obj.type === 'kill' && obj.current < obj.count) {
+                if (obj.type === 'kill' && (obj.target === enemy.type || obj.target === 'enemy') && obj.current < obj.count) {
                   questMgr3.updateQuestProgress(quest.id, idx, 1);
-                  // Update markers when quest progresses
-                  if (window.updateQuestMarkers) {
-                    updateQuestMarkers();
-                  }
+                  if (window.updateQuestMarkers) updateQuestMarkers();
                 }
               });
             });
           }
         });
+        if (rivalVictoryLine && window.showRivalVictoryToast) window.showRivalVictoryToast(rivalVictoryLine);
       }
       
       // Check for quest objective completion (location-based)
@@ -2803,6 +2886,12 @@
         combatSystem.spawnEnemy(-1100, 900, 'symbiote', { name: 'Agony' });
         combatSystem.spawnEnemy(-1300, 700, 'symbiote', { name: 'Lasher' });
         combatSystem.spawnEnemy(-1200, 950, 'symbiote', { name: 'Toxin' });
+        // Rival antagonist (location-based victory dialogue when defeated)
+        combatSystem.spawnEnemy(320, 180, 'rival', { isRival: true });
+        // Tower Chief and patrol (restricted-zone / tower interior flavour)
+        combatSystem.spawnEnemy(400, -300, 'tower_chief');
+        combatSystem.spawnEnemy(-400, 350, 'patrol');
+        combatSystem.spawnEnemy(-350, -400, 'patrol');
       }
       
       // Create enemy meshes
@@ -2936,7 +3025,7 @@
           </div>
           <div style="text-align: right;">
             <div style="color: #ffd700; font-weight: 600; font-size: 14px;">${item.price} Gold</div>
-            <button onclick="if(shop.buyItem(${item.id})) { updateShopUI(); updateToolBelt(); }" style="margin-top: 4px; background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">Buy</button>
+            <button onclick="if(shop.buyItem(${item.id})) { updateShopUI(); updateToolBelt(); if (typeof getShopPostPurchaseMessage === 'function') { const msg = getShopPostPurchaseMessage('${(item.type || 'consumable')}'); if (window.showShopPostPurchaseToast) showShopPostPurchaseToast(msg); } }" style="margin-top: 4px; background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">Buy</button>
           </div>
         `;
         inventoryList.appendChild(div);
@@ -3027,10 +3116,12 @@
         
         if (lobby) {
           lobbyEl.style.display = 'block';
+          const lobbyStrs = window.MULTIPLAYER_LOBBY_STRINGS || {};
+          const statusText = lobby.state === 'waiting' ? (lobbyStrs.waiting_for_players || 'Waiting for players…') : (lobbyStrs.game_starting || 'Game starting…');
           lobbyInfo.innerHTML = `
             <div style="color: #fff; font-weight: 600; margin-bottom: 8px;">${lobby.mode} Lobby</div>
             <div style="color: #b8e0ff; font-size: 12px; margin-bottom: 12px;">
-              ${lobby.players.length}/10 players · ${lobby.state === 'waiting' ? 'Waiting for players...' : 'Game starting...'}
+              ${lobby.players.length}/10 players · ${statusText}
             </div>
           `;
           
@@ -3143,6 +3234,29 @@
       alert('You died! Respawned at hub.');
     };
     
+    // Rival victory dialogue toast (location-specific line from dialogue.js)
+    window.showRivalVictoryToast = function(text) {
+      const toast = document.getElementById('dialogue-toast');
+      if (!toast) return;
+      toast.textContent = '[Rival] ' + (text || 'Yeah! Am I great or what?');
+      toast.classList.add('visible');
+      clearTimeout(window._rivalToastTimer);
+      window._rivalToastTimer = setTimeout(function() {
+        toast.classList.remove('visible');
+      }, 4500);
+    };
+    // Shop post-purchase message toast
+    window.showShopPostPurchaseToast = function(msg) {
+      const toast = document.getElementById('dialogue-toast');
+      if (!toast) return;
+      toast.textContent = msg || 'Item added.';
+      toast.classList.add('visible');
+      clearTimeout(window._shopToastTimer);
+      window._shopToastTimer = setTimeout(function() {
+        toast.classList.remove('visible');
+      }, 3000);
+    };
+    
     // Check NPC interactions
     setInterval(() => {
       if (!npcMeshes) return;
@@ -3213,6 +3327,20 @@
     document.getElementById('npc-close').addEventListener('click', () => {
       document.getElementById('npc-dialog').style.display = 'none';
     });
+    
+    // Warden NPC dialogue (Doom Patrol Tower restricted-zone guard)
+    function showWardenDialogue() {
+      const w = window.WARDEN_DIALOGUE || { greet: 'This area is restricted. State your business.', no_pass: 'You don\'t have clearance for the upper levels.', lore: 'They used to say a high-level manager hid in the Haveila sector. Now we handle things here in the Tower.' };
+      const dialog = document.getElementById('npc-dialog');
+      const nameEl = document.getElementById('npc-name');
+      const textEl = document.getElementById('npc-text');
+      const optionsEl = document.getElementById('npc-options');
+      if (!dialog || !nameEl || !textEl || !optionsEl) return;
+      nameEl.textContent = 'Warden';
+      textEl.textContent = w.greet + ' ' + w.lore;
+      optionsEl.innerHTML = '<button style="display: block; width: 100%; margin-top: 8px; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 8px; border-radius: 6px; cursor: pointer;" onclick="document.getElementById(\'npc-dialog\').style.display=\'none\'">Leave</button>';
+      dialog.style.display = 'block';
+    }
     
     // Track E key for NPC interaction
     let eKeyPressed = false;
@@ -3627,7 +3755,8 @@
           if (window.updatePetDisplay) {
             updatePetDisplay();
           }
-          alert(`Successfully purchased ${pet.name}!`);
+          const msg = (typeof getShopPostPurchaseMessage === 'function' && getShopPostPurchaseMessage('pet')) || `Successfully purchased ${pet.name}!`;
+          if (window.showShopPostPurchaseToast) window.showShopPostPurchaseToast(msg); else alert(msg);
         } else {
           alert('Failed to purchase pet. Check if you have enough gold.');
         }
@@ -3641,6 +3770,9 @@
         if (window.updatePetDisplay) {
           updatePetDisplay();
         }
+        // Pet storage/summon activation string (unused in original, now shown)
+        const switchMsg = (window.PET_STORAGE_STRINGS && window.PET_STORAGE_STRINGS.switch_on) || 'Switch on!';
+        if (window.showShopPostPurchaseToast) window.showShopPostPurchaseToast(switchMsg);
       }
     };
     
@@ -3698,12 +3830,15 @@
       document.getElementById('pets-ui').style.display = 'none';
     });
 
-    // Codex / Lore UI — intro sentences from lore.js
+    // Codex / Lore UI — intro sentences from lore.js + Tower/Haveila story
     document.getElementById('codex-btn').addEventListener('click', () => {
       const codexUI = document.getElementById('codex-ui');
       const sentencesEl = document.getElementById('codex-sentences');
+      const storyEl = document.getElementById('codex-story');
       const lore = (typeof INTRO_LORE !== 'undefined' && Array.isArray(INTRO_LORE)) ? INTRO_LORE : [];
       sentencesEl.innerHTML = lore.length ? lore.map((s, i) => `<p style="margin-bottom: 12px;">${i + 1}. ${s}</p>`).join('') : '<p style="color: #888;">No lore loaded.</p>';
+      const storyData = (typeof window !== 'undefined' && window.TOWER_HAVEILA_STORY) ? window.TOWER_HAVEILA_STORY : {};
+      storyEl.innerHTML = (storyData.codex_entry || storyData.early_draft) ? '<strong style="color: #f5e6a3;">Tower & Haveila</strong><p style="margin-top: 8px;">' + (storyData.codex_entry || storyData.early_draft) + '</p>' : '';
       codexUI.style.display = 'block';
     });
     document.getElementById('codex-close').addEventListener('click', () => {

@@ -24,7 +24,10 @@ class Enemy {
       'bandit': 75,
       'alien': 100,
       'boss': 500,
-      'symbiote': 100
+      'symbiote': 100,
+      'tower_chief': 350,
+      'patrol': 120,
+      'rival': 200
     };
     return baseHealth[this.type] || 50;
   }
@@ -35,7 +38,10 @@ class Enemy {
       'bandit': 8,
       'alien': 12,
       'boss': 25,
-      'symbiote': 10
+      'symbiote': 10,
+      'tower_chief': 18,
+      'patrol': 9,
+      'rival': 14
     };
     return baseDamage[this.type] || 5;
   }
@@ -46,7 +52,10 @@ class Enemy {
       'bandit': 4,
       'alien': 5,
       'boss': 2,
-      'symbiote': 4
+      'symbiote': 4,
+      'tower_chief': 3,
+      'patrol': 5,
+      'rival': 4
     };
     return baseSpeed[this.type] || 3;
   }
@@ -57,7 +66,10 @@ class Enemy {
       'bandit': 22,
       'alien': 25,
       'boss': 40,
-      'symbiote': 26
+      'symbiote': 26,
+      'tower_chief': 32,
+      'patrol': 22,
+      'rival': 24
     };
     return baseRadius[this.type] || 20;
   }
@@ -68,7 +80,10 @@ class Enemy {
       'bandit': 0xff8800,
       'alien': 0x00ff00,
       'boss': 0xff0000,
-      'symbiote': 0x1a1a2e
+      'symbiote': 0x1a1a2e,
+      'tower_chief': 0x8b4513,
+      'patrol': 0x4a5568,
+      'rival': 0x9c27b0
     };
     return colors[this.type] || 0xff4444;
   }
@@ -135,10 +150,12 @@ class CombatSystem {
     this.combatActive = false;
     this.playerAttackCooldown = 0;
     this.autoAttackEnabled = false;
+    this.lastKilledThisFrame = [];
   }
 
   spawnEnemy(x, y, type = 'basic', options = {}) {
     const enemy = new Enemy(x, y, type);
+    if (options.isRival) enemy.isRival = true;
     if (type === 'symbiote' && typeof VenomBody !== 'undefined') {
       const symbioteName = options.name || options.symbioteName || 'Venom';
       const symb = typeof getSymbioteByName !== 'undefined' ? getSymbioteByName(symbioteName) : null;
@@ -174,9 +191,12 @@ class CombatSystem {
   update(playerX, playerY, deltaTime) {
     this.playerAttackCooldown = Math.max(0, this.playerAttackCooldown - deltaTime);
     
+    // Track killed this frame for rival victory etc.
+    this.lastKilledThisFrame = [];
     // Update enemies
     this.enemies = this.enemies.filter(enemy => {
       if (!enemy.alive) {
+        this.lastKilledThisFrame.push(enemy);
         // Remove enemy mesh
         if (enemy.mesh && window.gameScene) {
           window.gameScene.remove(enemy.mesh);
