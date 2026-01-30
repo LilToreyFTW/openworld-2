@@ -103,6 +103,12 @@ Without `VIRTUALSIM_WS_URL`, the API falls back to `wss://virtualsim-one-server.
 - **ONE game server** (real-time multiplayer, matchmaking, TDM/S&D/Domination/CTF/Zombies) must run on **Fly.io, Railway, or Render**. Deploy the `game-server/` folder there, then set **VIRTUALSIM_WS_URL** in Vercel to that WebSocket URL.
 - The client gets the WebSocket URL from **GET /api/server** and connects for multiplayer and matchmaking. Game modes are listed from **GET /api/game-modes**.
 
+### Vercel user connection
+
+- **Connection type**: Every user loading the game from your Vercel URL (e.g. openworld-2-mpxt.vercel.app) connects to the **ONE server** using the URL returned by `/api/server` (from `VIRTUALSIM_WS_URL`).
+- **Identification**: The client sends `connection_source` with `origin` and `source: 'vercel'` to the ONE server after joining. The server stores this and includes `vercelUsers` in its HTTP GET response (root URL of the game server).
+- **Single canonical flow**: Vercel → `/api/server` → `wsUrl` → client connects to ONE server → client sends `connection_source` (origin + source). All Vercel users share the same world on the ONE server.
+
 ## Notes
 
 - **Game data**: Stored client-side in `localStorage` (browser)

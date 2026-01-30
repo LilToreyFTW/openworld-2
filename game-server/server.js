@@ -15,8 +15,8 @@ const http = require('http');
 
 const PORT = process.env.PORT || 8765;
 
-// Single room: all players in one world
-const players = new Map(); // id -> { id, name, x, y, level, color, lastSeen }
+// Single room: all players in one world (origin/source = Vercel user connection)
+const players = new Map(); // id -> { id, name, x, y, level, color, lastSeen, origin?, source? }
 
 // Matchmaking queues and lobbies
 const GAME_MODES = ['TDM', 'Domination', 'CTF', 'SearchAndDestroy', 'Zombies'];
@@ -151,12 +151,15 @@ function removePlayerFromLobbies(playerId) {
 }
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.writeHead(200, { 'Content-Type': 'application/json' });
+  const vercelUsers = Array.from(players.values()).filter(p => p.source === 'vercel').length;
   res.end(JSON.stringify({
     game: 'Virtual Sim',
     server: 'ONE',
     playersOnline: players.size,
-    message: 'This is the only server. Everyone plays here.'
+    vercelUsers,
+    message: 'This is the only server. Everyone plays here. Vercel users connect via /api/server.'
   }));
 });
 
@@ -189,7 +192,9 @@ wss.on('connection', (ws, req) => {
     y: 0,
     level: 1,
     color: getNextColor(),
-    lastSeen: Date.now()
+    lastSeen: Date.now(),
+    origin: null,
+    source: null
   });
 
   // Send this client: their id + full list of all players (including themselves)
@@ -211,6 +216,13 @@ wss.on('connection', (ws, req) => {
       const me = players.get(id);
       if (!me) return;
 
+      // Vercel user connection: client sends origin + source (vercel | web | local)
+      if (data.type === 'connection_source') {
+        if (data.origin != null) me.origin = String(data.origin);
+        if (data.source != null) me.source = String(data.source);
+        broadcast({ type: 'player_update', player: { id, ...me } }, id);
+      }
+
       if (data.type === 'update') {
         me.name = data.name != null ? data.name : me.name;
         me.x = typeof data.x === 'number' ? data.x : me.x;
@@ -218,6 +230,8 @@ wss.on('connection', (ws, req) => {
         me.level = typeof data.level === 'number' ? data.level : me.level;
         me.color = data.color != null ? data.color : me.color;
         me.lastSeen = Date.now();
+        if (data.origin != null) me.origin = String(data.origin);
+        if (data.source != null) me.source = String(data.source);
 
         // Broadcast this player's state to everyone else (single server = everyone sees everyone)
         broadcast({

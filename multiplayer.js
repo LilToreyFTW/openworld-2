@@ -27,14 +27,16 @@
     sendUpdate: function(state) {
       if (!ws || ws.readyState !== WebSocket.OPEN || !myId) return;
       try {
-        ws.send(JSON.stringify({
+        var payload = {
           type: 'update',
           name: state.name,
           x: state.x,
           y: state.y,
           level: state.level,
           color: state.color
-        }));
+        };
+        if (window.location && window.location.origin) payload.origin = window.location.origin;
+        ws.send(JSON.stringify(payload));
       } catch (_) {}
     },
     setOnPlayersUpdate: function(cb) { onPlayersUpdate = cb; },
@@ -79,6 +81,14 @@
               otherPlayers.set(p.id, { ...p });
             }
           });
+          // Tell ONE server this is a Vercel user connection (origin + source)
+          var origin = window.location.origin;
+          var source = (window.location.hostname || '').indexOf('vercel') !== -1 ? 'vercel' : (origin ? 'web' : 'unknown');
+          try {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'connection_source', origin: origin, source: source }));
+            }
+          } catch (_) {}
           if (onPlayersUpdate) onPlayersUpdate();
           return;
         }

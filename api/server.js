@@ -19,7 +19,8 @@ module.exports = async (req, res) => {
   return res.json({
     wsUrl,
     status: 'ok',
-    message: 'ONE server for the entire game. Everyone connects here.',
+    connectionType: 'Vercel user connection',
+    message: 'ONE server for the entire game. Users from this deployment connect here.',
     gameModes: ['TDM', 'Domination', 'CTF', 'SearchAndDestroy', 'Zombies']
   });
 };
