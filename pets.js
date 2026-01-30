@@ -282,7 +282,7 @@ class PetSystem {
       species: species,
       level: 1,
       experience: 0,
-      experienceToNext: 50, // Start with 50 XP needed (matches Lua table)
+      experienceToNext: this.getXPForLevel(1),
       happiness: 100,
       hunger: 100,
       health: 100,
@@ -320,6 +320,8 @@ class PetSystem {
       humanDamage: 0
     };
 
+    this.recalculatePetStats(pet);
+
     // Add to pets array
     this.pets.push(pet);
     this.save();
@@ -337,14 +339,13 @@ class PetSystem {
     const petData = PET_SPECIES[species];
     const price = petData.basePrice;
 
-    // Check if player has enough gold
-    if (!window.goldSystem || window.goldSystem.gold < price) {
+    const goldSystem = window.goldSystem || window.shop;
+    if (!goldSystem || goldSystem.gold < price) {
       console.error('Error: Not enough gold to buy pet');
       return false;
     }
 
-    // Spend gold
-    if (!window.goldSystem.spendGold(price)) {
+    if (!goldSystem.spendGold(price)) {
       return false;
     }
 
@@ -633,6 +634,33 @@ class PetSystem {
   // Get all pets
   getAllPets() {
     return [...this.pets];
+  }
+
+  // Get owned pets (excludes released)
+  getOwnedPets() {
+    return this.pets.filter(p => p.status !== 'released');
+  }
+
+  // Get settings (for UI)
+  getSettings() {
+    return { ...this.settings };
+  }
+
+  // Update settings (for UI)
+  updateSettings(updates) {
+    if (!updates || typeof updates !== 'object') return false;
+    Object.keys(updates).forEach(key => {
+      if (this.settings.hasOwnProperty(key)) {
+        if (key === 'maxDistance') {
+          const n = Number(updates[key]);
+          if (!isNaN(n) && n >= 50 && n <= 1000) this.settings[key] = n;
+        } else {
+          this.settings[key] = !!updates[key];
+        }
+      }
+    });
+    this.save();
+    return true;
   }
 
   // Update pet stats over time

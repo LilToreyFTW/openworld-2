@@ -161,6 +161,75 @@
     .char-creation-nav button {
       flex: 1;
     }
+
+    /* Cinematic intro — space starfield + Star Wars crawl */
+    #view-cinematic {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 1000;
+    }
+    #cinematic-starfield {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    #cinematic-crawl-wrap {
+      position: absolute;
+      inset: 0;
+      perspective: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #cinematic-crawl {
+      width: 90%;
+      max-width: 42em;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: clamp(14px, 2.2vw, 22px);
+      font-weight: 600;
+      line-height: 1.8;
+      text-align: center;
+      color: #f5e6a3;
+      text-shadow: 0 0 8px rgba(245,230,163,0.6);
+      transform: rotateX(55deg) translateY(100vh);
+      transform-origin: 50% 0%;
+      white-space: pre-line;
+      animation: crawl 120s linear forwards;
+    }
+    @keyframes crawl {
+      from { transform: rotateX(55deg) translateY(100vh); }
+      to { transform: rotateX(55deg) translateY(-220%); }
+    }
+    #cinematic-crawl.skip { animation-duration: 0.5s; }
+    #cinematic-skip {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      padding: 10px 20px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(245,230,163,0.5);
+      border-radius: 8px;
+      color: #f5e6a3;
+      font-size: 14px;
+      cursor: pointer;
+      z-index: 10;
+      pointer-events: auto;
+    }
+    #cinematic-skip:hover {
+      background: rgba(40,35,20,0.9);
+      border-color: #f5e6a3;
+    }
+    #cinematic-audio {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +301,18 @@
     </form>
   </section>
 
+  <!-- CINEMATIC INTRO — Stars + soundtrack + Star Wars crawl -->
+  <section id="view-cinematic" class="view">
+    <canvas id="cinematic-starfield"></canvas>
+    <div id="cinematic-crawl-wrap">
+      <div id="cinematic-crawl"></div>
+    </div>
+    <button type="button" id="cinematic-skip">Skip</button>
+    <audio id="cinematic-audio" preload="auto">
+      <source src="game-soundtrack/Haveila(dreadnaught spacemap animated).mp3" type="audio/mpeg">
+    </audio>
+  </section>
+
   <!-- DOOM PATROL MISSION (INTRO) -->
   <section id="view-intro" class="view">
     <h1 class="logo">Doom Patrol Mission</h1>
@@ -248,6 +329,60 @@
   <script>
     const STORAGE_KEY = 'virtualSimGame';
     const STORAGE_INTRO = 'virtualSimIntroDone';
+
+    // Cinematic crawl — 50 sentences, sad, about the vast severe land
+    const CRAWL_SENTENCES = [
+      'HOPE IS SOMETHING WE CAN ALWAYS AFFORD',
+      'LIFE IS SOMETHING MORE GREATER THAN YOU THINK',
+      'YOU JUST GOTTA KNOW HOW TO LIVE IT',
+      'THE LAND STRETCHES BEYOND WHAT ANY EYE CAN HOLD',
+      'IN THE VASTNESS WE LEARN HOW SMALL WE ARE',
+      'THE SKY HAS NO MERCY FOR THOSE WHO LOOK UP AND WEEP',
+      'EVERY ROAD LEADS THROUGH THE SEVERE AND THE BEAUTIFUL',
+      'SOME PLACES TAKE MORE THAN THEY GIVE',
+      'YOU WILL WALK FOR MILES AND STILL BE NOWHERE',
+      'THE EARTH REMEMBERS EVERY FOOTSTEP AND EVERY FALL',
+      'IN THE WILD THERE IS NO PROMISE OF TOMORROW',
+      'WE CAME TO THIS LAND BECAUSE WE HAD NOWHERE ELSE',
+      'THE STARS DO NOT COMFORT THEY ONLY WATCH',
+      'TO SURVIVE HERE IS TO ACCEPT THAT YOU ARE ALONE',
+      'THE WIND CARRIES THE NAMES OF THOSE WHO DID NOT MAKE IT',
+      'THIS WORLD WAS NOT BUILT FOR KINDNESS',
+      'WE BUILD TOWERS IN THE HOPE THAT SOMEONE WILL SEE THEM',
+      'THE NIGHT LASTS LONGER THAN THE DAY IN THESE PARTS',
+      'MANY HAVE CROSSED THIS LAND AND FEW HAVE RETURNED',
+      'THE GROUND HOLDS BONES THAT NO ONE COMES TO CLAIM',
+      'YOU LEARN TO CARRY YOUR GRIEF LIKE A WEAPON',
+      'THERE IS NO MAP FOR THE PLACES INSIDE YOU THAT BREAK',
+      'THE VAST LAND FORGIVES NOTHING AND FORGETS NO ONE',
+      'WE LIVE BECAUSE THE ALTERNATIVE IS TO STOP',
+      'EVERY DAWN HERE FEELS LIKE A REPRIEVE NOT A GIFT',
+      'THE SEVERE BEAUTY OF THIS PLACE WILL OUTLAST US ALL',
+      'SOME DAYS THE ONLY THING YOU CAN DO IS WALK',
+      'THE SKY AND THE EARTH MEET IN A LINE THAT NEVER ENDS',
+      'WE CAME FROM SOMEWHERE ELSE AND WE WILL LEAVE AS STRANGERS',
+      'THE LAND DOES NOT CARE IF YOU ARE READY',
+      'HOPE IS THE THING YOU CLUTCH WHEN THE LIGHT GOES OUT',
+      'TO LOVE THIS PLACE IS TO LOVE WHAT IT TAKES FROM YOU',
+      'THE DISTANCE BETWEEN TWO POINTS IS ALWAYS FURTHER THAN IT LOOKS',
+      'WE BUILD FIRES TO REMIND OURSELVES THAT WE ARE STILL ALIVE',
+      'THE VAST OPEN LAND HAS NO DOORS AND NO EXIT',
+      'EVERY SEASON HERE LEAVES ITS MARK ON YOUR FACE',
+      'THE STARS ARE COLD WITNESSES TO EVERYTHING WE LOSE',
+      'THIS WORLD IS SEVERE SO THAT ONLY THE STUBBORN REMAIN',
+      'YOU LEARN THAT SOLITUDE IS NOT THE SAME AS PEACE',
+      'THE LAND GIVES BACK NOTHING YOU DO NOT FIGHT FOR',
+      'WE MARCH BECAUSE STANDING STILL IS A KIND OF DEATH',
+      'THE SKY HAS SEEN TOO MUCH TO OFFER COMFORT',
+      'IN THE VAST AND SEVERE WE FIND OUT WHO WE REALLY ARE',
+      'EVERY FOOTPRINT IN THE DUST IS A PRAYER FOR SOMETHING MORE',
+      'THE NIGHT HERE HAS NO BOTTOM AND NO EDGE',
+      'WE CARRY THE WEIGHT OF PLACES WE CAN NEVER RETURN TO',
+      'THE LAND REMEMBERS EVERY WAR EVERY FALL EVERY SILENCE',
+      'TO LIVE HERE IS TO ACCEPT THAT BEAUTY AND LOSS ARE THE SAME',
+      'THE VAST SEVERE LAND DOES NOT PROMISE YOU A HOME',
+      'BUT WE GO ON BECAUSE GOING ON IS THE ONLY THING LEFT TO DO'
+    ];
 
     // Character appearance options
     const CHARACTER_COLORS = {
@@ -419,7 +554,7 @@
     }
 
     document.getElementById('btn-new-game').addEventListener('click', () => {
-      showView('create');
+      startCinematicIntro();
     });
 
     document.getElementById('btn-back-menu').addEventListener('click', () => {
@@ -443,7 +578,6 @@
       const name = document.getElementById('character-name').value.trim();
       if (!name) return;
       
-      // Save character with appearance data
       setState({
         characterName: name,
         appearance: characterAppearance,
@@ -452,6 +586,69 @@
       
       showView('intro');
     });
+
+    // ——— Cinematic intro: starfield + soundtrack + Star Wars crawl ———
+    let starfieldCtx = null;
+    let starfieldStars = [];
+    const STAR_COUNT = 280;
+
+    function drawStarfield() {
+      const canvas = document.getElementById('cinematic-starfield');
+      if (!canvas) return;
+      if (!starfieldCtx) {
+        starfieldCtx = canvas.getContext('2d');
+        const resize = () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          if (starfieldStars.length === 0) {
+            for (let i = 0; i < STAR_COUNT; i++) {
+              starfieldStars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.2 + 0.2,
+                speed: Math.random() * 0.4 + 0.1
+              });
+            }
+          }
+        };
+        resize();
+        window.addEventListener('resize', resize);
+      }
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      starfieldCtx.fillStyle = '#000';
+      starfieldCtx.fillRect(0, 0, canvas.width, canvas.height);
+      starfieldCtx.fillStyle = '#fff';
+      starfieldStars.forEach(s => {
+        s.y -= s.speed;
+        if (s.y < 0) { s.y = canvas.height; s.x = Math.random() * canvas.width; }
+        starfieldCtx.beginPath();
+        starfieldCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        starfieldCtx.fill();
+      });
+    }
+
+    function startCinematicIntro() {
+      showView('cinematic');
+      const crawlEl = document.getElementById('cinematic-crawl');
+      const audioEl = document.getElementById('cinematic-audio');
+      if (crawlEl) crawlEl.textContent = CRAWL_SENTENCES.join('\n\n');
+      if (audioEl) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+      }
+      let starfieldInterval = setInterval(drawStarfield, 50);
+      drawStarfield();
+
+      function endCinematic() {
+        clearInterval(starfieldInterval);
+        if (audioEl) audioEl.pause();
+        showView('create');
+      }
+
+      document.getElementById('cinematic-skip').onclick = endCinematic;
+      crawlEl.addEventListener('animationend', endCinematic, { once: true });
+    }
 
     document.getElementById('btn-enter-tower').addEventListener('click', () => {
       localStorage.setItem(STORAGE_INTRO, '1');

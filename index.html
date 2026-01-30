@@ -452,6 +452,10 @@
     <div style="margin-bottom: 12px; padding: 8px; background: rgba(255,182,193,0.1); border-radius: 6px;">
       <div style="color: #ffb6c1; font-size: 12px;">Gold: <span id="pets-gold-display">0</span></div>
     </div>
+    <details id="pets-settings-details" style="margin-bottom: 12px; background: rgba(50,50,70,0.5); border-radius: 8px; border: 1px solid rgba(255,182,193,0.2);">
+      <summary style="color: #ffb6c1; font-size: 13px; padding: 8px 12px; cursor: pointer;">⚙️ Pet Settings</summary>
+      <div id="pets-settings-content" style="padding: 10px 12px; font-size: 11px; color: #ccc;"></div>
+    </details>
     <div style="margin-bottom: 12px;">
       <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px;">Buy Pet</h4>
       <div id="pets-shop-list" style="max-height: 200px; overflow-y: auto;"></div>
@@ -3191,6 +3195,33 @@
       // Update gold display
       if (petsGoldDisplay && shopSystem) {
         petsGoldDisplay.textContent = shopSystem.gold || 0;
+      }
+      
+      // Pet Settings panel
+      const petsSettingsContent = document.getElementById('pets-settings-content');
+      if (petsSettingsContent) {
+        const s = petSys.getSettings();
+        petsSettingsContent.innerHTML = `
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-evolution" ${s.evolutionEnabled ? 'checked' : ''}> Evolution (level-up evolve)</label>
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-teleport" ${s.teleportWhenFar ? 'checked' : ''}> Teleport when far</label>
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-samespeed" ${s.sameSpeedAsPlayer ? 'checked' : ''}> Same speed as player</label>
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-heallevelup" ${s.healOnLevelUp ? 'checked' : ''}> Heal on level up</label>
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-catchmount" ${s.catchToMount ? 'checked' : ''}> Catch to mount</label>
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><input type="checkbox" id="pet-setting-potions" ${s.usePotions ? 'checked' : ''}> Use potions on pet</label>
+          <div style="margin-top: 6px;">Max distance (teleport): <input type="number" id="pet-setting-maxdist" min="50" max="1000" value="${s.maxDistance}" style="width: 60px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,182,193,0.3); color: #fff; padding: 4px; border-radius: 4px;"></div>
+        `;
+        petsSettingsContent.querySelectorAll('#pet-setting-evolution, #pet-setting-teleport, #pet-setting-samespeed, #pet-setting-heallevelup, #pet-setting-catchmount, #pet-setting-potions').forEach(el => {
+          if (el.id) el.addEventListener('change', function() {
+            const id = this.id.replace('pet-setting-', '');
+            const key = id === 'evolution' ? 'evolutionEnabled' : id === 'teleport' ? 'teleportWhenFar' : id === 'samespeed' ? 'sameSpeedAsPlayer' : id === 'heallevelup' ? 'healOnLevelUp' : id === 'catchmount' ? 'catchToMount' : 'usePotions';
+            petSys.updateSettings({ [key]: this.checked });
+          });
+        });
+        const maxDistEl = petsSettingsContent.querySelector('#pet-setting-maxdist');
+        if (maxDistEl) maxDistEl.addEventListener('change', function() {
+          const n = parseInt(this.value, 10);
+          if (!isNaN(n) && n >= 50 && n <= 1000) petSys.updateSettings({ maxDistance: n });
+        });
       }
       
       // Update shop list (available pets to buy)
