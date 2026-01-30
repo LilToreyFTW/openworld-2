@@ -344,6 +344,7 @@
   <script src="combat.js"></script>
   <script src="settings.js"></script>
   <script src="shop.js"></script>
+  <script src="lore.js"></script>
   <script src="achievements.js"></script>
   <script src="pets.js"></script>
 </head>
@@ -423,6 +424,7 @@
     <button id="matchmaking-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🎮 Multiplayer</button>
     <button id="shop-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🛒 Shop</button>
     <button id="pets-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🐾 Pets</button>
+    <button id="codex-btn" style="background: rgba(0,0,0,0.7); color: #f5e6a3; border: 1px solid rgba(245,230,163,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">📖 Lore</button>
     <button id="settings-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">⚙️ Settings</button>
     <button id="music-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">▶ Main soundtrack</button>
   </div>
@@ -466,6 +468,16 @@
     </div>
   </div>
   
+  <!-- Codex / Lore UI (intro sentences) -->
+  <div id="codex-ui" style="display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 480px; max-height: 85vh; background: rgba(15,15,30,0.98); border: 2px solid rgba(245,230,163,0.4); border-radius: 12px; padding: 20px; overflow-y: auto; z-index: 220; box-shadow: 0 4px 24px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="color: #f5e6a3; font-size: 18px;">📖 The Vast Severe Land — Lore</h3>
+      <button id="codex-close" style="background: transparent; border: none; color: #f5e6a3; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <p style="color: #888; font-size: 12px; margin-bottom: 12px;">Words from the intro. The land remembers every war, every fall, every silence.</p>
+    <div id="codex-sentences" style="font-family: Georgia, serif; font-size: 14px; line-height: 2; color: #f5e6a3; text-shadow: 0 0 8px rgba(245,230,163,0.3);"></div>
+  </div>
+
   <!-- Pet Skills UI -->
   <div id="pet-skills-ui" style="display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 500px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(255,215,0,0.4); border-radius: 12px; padding: 20px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -3414,6 +3426,18 @@
     
     document.getElementById('pets-close').addEventListener('click', () => {
       document.getElementById('pets-ui').style.display = 'none';
+    });
+
+    // Codex / Lore UI — intro sentences from lore.js
+    document.getElementById('codex-btn').addEventListener('click', () => {
+      const codexUI = document.getElementById('codex-ui');
+      const sentencesEl = document.getElementById('codex-sentences');
+      const lore = (typeof INTRO_LORE !== 'undefined' && Array.isArray(INTRO_LORE)) ? INTRO_LORE : [];
+      sentencesEl.innerHTML = lore.length ? lore.map((s, i) => `<p style="margin-bottom: 12px;">${i + 1}. ${s}</p>`).join('') : '<p style="color: #888;">No lore loaded.</p>';
+      codexUI.style.display = 'block';
+    });
+    document.getElementById('codex-close').addEventListener('click', () => {
+      document.getElementById('codex-ui').style.display = 'none';
     });
 
   </script>

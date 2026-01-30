@@ -338,73 +338,21 @@
   <!-- DOOM PATROL MISSION (INTRO) -->
   <section id="view-intro" class="view">
     <h1 class="logo">Doom Patrol Mission</h1>
-    <p class="sub">Intro — First deployment</p>
+    <p class="sub">The vast severe land — first deployment</p>
     <div class="mission-card">
       <h2>Briefing</h2>
-      <p>You are cleared for deployment. Your first assignment: reach the Doom Patrol Tower and link up with the gathering area. The Tower is the main hub for operations across all seven planets.</p>
-      <p>From there you can accept land and space quests, run missions, join multiplayer (TDM, Domination, CTF, Search and Destroy), survive Zombies, and unlock 50 weapons with 10 prestige camos each.</p>
+      <p>The land stretches beyond what any eye can hold. We build towers in the hope that someone will see them. Your first assignment: reach the Doom Patrol Tower and link up with the gathering area. In the vastness we learn how small we are—but we go on because going on is the only thing left to do.</p>
+      <p>From the Tower you can accept land and space quests, run missions, join multiplayer (TDM, Domination, CTF, Search and Destroy), survive Zombies, and unlock 50 weapons with 10 prestige camos. Every road leads through the severe and the beautiful.</p>
       <p class="objective">Objective: Enter the Doom Patrol Tower (Hub) and report in.</p>
     </div>
     <button type="button" id="btn-enter-tower" class="btn-primary">Enter Doom Patrol Tower</button>
   </section>
 
+  <script src="lore.js"></script>
   <script>
     const STORAGE_KEY = 'virtualSimGame';
     const STORAGE_INTRO = 'virtualSimIntroDone';
-
-    // Cinematic crawl — 50 sentences, sad, about the vast severe land
-    const CRAWL_SENTENCES = [
-      'HOPE IS SOMETHING WE CAN ALWAYS AFFORD',
-      'LIFE IS SOMETHING MORE GREATER THAN YOU THINK',
-      'YOU JUST GOTTA KNOW HOW TO LIVE IT',
-      'THE LAND STRETCHES BEYOND WHAT ANY EYE CAN HOLD',
-      'IN THE VASTNESS WE LEARN HOW SMALL WE ARE',
-      'THE SKY HAS NO MERCY FOR THOSE WHO LOOK UP AND WEEP',
-      'EVERY ROAD LEADS THROUGH THE SEVERE AND THE BEAUTIFUL',
-      'SOME PLACES TAKE MORE THAN THEY GIVE',
-      'YOU WILL WALK FOR MILES AND STILL BE NOWHERE',
-      'THE EARTH REMEMBERS EVERY FOOTSTEP AND EVERY FALL',
-      'IN THE WILD THERE IS NO PROMISE OF TOMORROW',
-      'WE CAME TO THIS LAND BECAUSE WE HAD NOWHERE ELSE',
-      'THE STARS DO NOT COMFORT THEY ONLY WATCH',
-      'TO SURVIVE HERE IS TO ACCEPT THAT YOU ARE ALONE',
-      'THE WIND CARRIES THE NAMES OF THOSE WHO DID NOT MAKE IT',
-      'THIS WORLD WAS NOT BUILT FOR KINDNESS',
-      'WE BUILD TOWERS IN THE HOPE THAT SOMEONE WILL SEE THEM',
-      'THE NIGHT LASTS LONGER THAN THE DAY IN THESE PARTS',
-      'MANY HAVE CROSSED THIS LAND AND FEW HAVE RETURNED',
-      'THE GROUND HOLDS BONES THAT NO ONE COMES TO CLAIM',
-      'YOU LEARN TO CARRY YOUR GRIEF LIKE A WEAPON',
-      'THERE IS NO MAP FOR THE PLACES INSIDE YOU THAT BREAK',
-      'THE VAST LAND FORGIVES NOTHING AND FORGETS NO ONE',
-      'WE LIVE BECAUSE THE ALTERNATIVE IS TO STOP',
-      'EVERY DAWN HERE FEELS LIKE A REPRIEVE NOT A GIFT',
-      'THE SEVERE BEAUTY OF THIS PLACE WILL OUTLAST US ALL',
-      'SOME DAYS THE ONLY THING YOU CAN DO IS WALK',
-      'THE SKY AND THE EARTH MEET IN A LINE THAT NEVER ENDS',
-      'WE CAME FROM SOMEWHERE ELSE AND WE WILL LEAVE AS STRANGERS',
-      'THE LAND DOES NOT CARE IF YOU ARE READY',
-      'HOPE IS THE THING YOU CLUTCH WHEN THE LIGHT GOES OUT',
-      'TO LOVE THIS PLACE IS TO LOVE WHAT IT TAKES FROM YOU',
-      'THE DISTANCE BETWEEN TWO POINTS IS ALWAYS FURTHER THAN IT LOOKS',
-      'WE BUILD FIRES TO REMIND OURSELVES THAT WE ARE STILL ALIVE',
-      'THE VAST OPEN LAND HAS NO DOORS AND NO EXIT',
-      'EVERY SEASON HERE LEAVES ITS MARK ON YOUR FACE',
-      'THE STARS ARE COLD WITNESSES TO EVERYTHING WE LOSE',
-      'THIS WORLD IS SEVERE SO THAT ONLY THE STUBBORN REMAIN',
-      'YOU LEARN THAT SOLITUDE IS NOT THE SAME AS PEACE',
-      'THE LAND GIVES BACK NOTHING YOU DO NOT FIGHT FOR',
-      'WE MARCH BECAUSE STANDING STILL IS A KIND OF DEATH',
-      'THE SKY HAS SEEN TOO MUCH TO OFFER COMFORT',
-      'IN THE VAST AND SEVERE WE FIND OUT WHO WE REALLY ARE',
-      'EVERY FOOTPRINT IN THE DUST IS A PRAYER FOR SOMETHING MORE',
-      'THE NIGHT HERE HAS NO BOTTOM AND NO EDGE',
-      'WE CARRY THE WEIGHT OF PLACES WE CAN NEVER RETURN TO',
-      'THE LAND REMEMBERS EVERY WAR EVERY FALL EVERY SILENCE',
-      'TO LIVE HERE IS TO ACCEPT THAT BEAUTY AND LOSS ARE THE SAME',
-      'THE VAST SEVERE LAND DOES NOT PROMISE YOU A HOME',
-      'BUT WE GO ON BECAUSE GOING ON IS THE ONLY THING LEFT TO DO'
-    ];
+    const CRAWL_SENTENCES = window.INTRO_LORE || [];
 
     // Character appearance options
     const CHARACTER_COLORS = {
