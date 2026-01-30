@@ -1,5 +1,9 @@
 # Deploying Virtual Sim Game to Vercel
 
+- **Live app**: [openworld-2-mpxt.vercel.app](https://openworld-2-mpxt.vercel.app)
+- **Vercel project**: [openworld-2-mpxt](https://vercel.com/coresremotehelpers-projects/openworld-2-mpxt)
+- **GitHub repo**: [LilToreyFTW/openworld-2](https://github.com/LilToreyFTW/openworld-2)
+
 ## Finish Game & Push to Vercel
 
 1. **Login to Vercel** (one-time):
@@ -46,14 +50,13 @@ npm run deploy:preview
 # or: npx vercel
 ```
 
-### Option 2: GitHub Integration
+### Option 2: GitHub Integration (auto-deploy)
 
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Click "New Project"
-4. Import your GitHub repository
-5. Vercel will auto-detect settings
-6. Click "Deploy"
+1. Code is already on GitHub: [LilToreyFTW/openworld-2](https://github.com/LilToreyFTW/openworld-2)
+2. Open your Vercel project: [openworld-2-mpxt](https://vercel.com/coresremotehelpers-projects/openworld-2-mpxt)
+3. In the project: **Settings → Git** (or **Connect Git** on overview)
+4. Connect **GitHub** and select `LilToreyFTW/openworld-2`
+5. Leave branch `master`; Vercel will auto-deploy on every push
 
 ## Files Included
 
@@ -97,6 +100,9 @@ No environment variables required for basic deployment.
 
 ## Troubleshooting
 
+**Issue**: Root URL (openworld-2-mpxt.vercel.app) shows 404 or blank
+- **Fix**: `vercel.json` rewrites `/` → `/game.html` (main menu). Redeploy after pulling. In Vercel project **Settings → General**: set **Framework Preset** to **Other** and **Build Command** to empty so static files are included.
+
 **Issue**: API endpoints return 404
 - **Fix**: Ensure `api/index.js` exists and `vercel.json` is configured
 
@@ -104,4 +110,4 @@ No environment variables required for basic deployment.
 - **Fix**: Check file paths are relative (not absolute)
 
 **Issue**: Music not playing
-- **Fix**: Ensure `game-soundtrack/` folder is included in deployment
+- **Fix**: Ensure `game-soundtrack/` folder is included in deployment (and in `vercel.json` builds)

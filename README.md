@@ -4,6 +4,8 @@ Single-page + hub game: **main menu → character creation → Doom Patrol Missi
 
 ## How to play
 
+- **Play online:** [openworld-2-mpxt.vercel.app](https://openworld-2-mpxt.vercel.app) — start with **game.html** from the deployed root.
+
 1. **Start the game:** Open **`game.html`** in a browser (or run a local server).
 2. **Main menu:** Choose **New Game** or **Continue** (if you have a saved character).
 3. **Character creation:** Enter your callsign/name and click **Deploy — Start Doom Patrol Mission**.
