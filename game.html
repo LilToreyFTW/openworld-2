@@ -571,8 +571,14 @@
       ctx.fill();
     }
 
+    let hasSeenCinematicThisSession = false;
     document.getElementById('btn-new-game').addEventListener('click', () => {
-      startCinematicIntro();
+      if (!hasSeenCinematicThisSession) {
+        hasSeenCinematicThisSession = true;
+        startCinematicIntro();
+      } else {
+        showView('create');
+      }
     });
 
     document.getElementById('btn-back-menu').addEventListener('click', () => {
@@ -666,7 +672,7 @@
       function endCinematic() {
         clearInterval(starfieldInterval);
         if (audioEl) audioEl.pause();
-        showView('create');
+        showView('menu'); // Back to main menu after intro
       }
 
       document.getElementById('cinematic-skip').onclick = endCinematic;
