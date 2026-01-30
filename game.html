@@ -163,7 +163,8 @@
     }
 
     /* Cinematic intro — space starfield + Star Wars crawl (full screen, text visible) */
-    #view-cinematic {
+    #view-cinematic.view { display: none; }
+    #view-cinematic.view.active {
       position: fixed;
       top: 0;
       left: 0;
@@ -198,35 +199,38 @@
       left: 0;
       width: 100%;
       height: 100%;
-      perspective: 360px;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
       overflow: hidden;
+      z-index: 2;
     }
     #cinematic-crawl {
-      width: 85%;
-      max-width: 38em;
+      width: 90%;
+      max-width: 36em;
       padding: 0 1em;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: clamp(18px, 4vw, 28px);
+      font-size: clamp(20px, 4.5vw, 32px);
       font-weight: 700;
-      line-height: 2;
-      letter-spacing: 0.08em;
+      line-height: 2.2;
+      letter-spacing: 0.06em;
       text-align: center;
       color: #f5e6a3;
-      text-shadow: 0 0 12px rgba(245,230,163,0.8), 0 2px 4px rgba(0,0,0,0.8);
-      transform: rotateX(52deg) translateY(60vh);
-      transform-origin: 50% 0%;
+      text-shadow: 0 0 16px rgba(245,230,163,0.9), 0 2px 8px rgba(0,0,0,0.9);
       white-space: pre-line;
-      animation: crawl 120s linear forwards;
+      transform: translateY(100vh);
+      position: relative;
+      z-index: 2;
+    }
+    #cinematic-crawl.crawl-running {
+      animation: crawl linear forwards;
     }
     @keyframes crawl {
-      from { transform: rotateX(52deg) translateY(60vh); }
-      to { transform: rotateX(52deg) translateY(-180%); }
+      from { transform: translateY(100vh); }
+      to { transform: translateY(-200%); }
     }
-    #cinematic-crawl.skip { animation-duration: 0.5s; }
+    #cinematic-crawl.skip { animation-duration: 0.5s !important; }
     #cinematic-skip {
       position: absolute;
       bottom: 24px;
@@ -662,21 +666,45 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
       }
-      if (audioEl) {
-        audioEl.currentTime = 0;
-        audioEl.play().catch(() => {});
-      }
       let starfieldInterval = setInterval(drawStarfield, 50);
       drawStarfield();
 
       function endCinematic() {
         clearInterval(starfieldInterval);
         if (audioEl) audioEl.pause();
-        showView('menu'); // Back to main menu after intro
+        showView('menu');
+      }
+
+      const CRAWL_DURATION = 180; // 3 minutes
+
+      function setCrawlToSongDuration() {
+        if (crawlEl) {
+          crawlEl.style.animationDuration = CRAWL_DURATION + 's';
+          crawlEl.classList.add('crawl-running');
+        }
+        if (audioEl) {
+          audioEl.currentTime = 0;
+          audioEl.play().catch(() => {});
+        }
+      }
+
+      if (audioEl) {
+        audioEl.addEventListener('ended', endCinematic, { once: true });
+        if (audioEl.readyState >= 1) {
+          setCrawlToSongDuration();
+        } else {
+          audioEl.addEventListener('loadedmetadata', setCrawlToSongDuration, { once: true });
+          audioEl.load();
+        }
+      } else {
+        if (crawlEl) {
+          crawlEl.style.animationDuration = CRAWL_DURATION + 's';
+          crawlEl.classList.add('crawl-running');
+        }
       }
 
       document.getElementById('cinematic-skip').onclick = endCinematic;
-      crawlEl.addEventListener('animationend', endCinematic, { once: true });
+      if (crawlEl) crawlEl.addEventListener('animationend', endCinematic, { once: true });
     }
 
     document.getElementById('btn-enter-tower').addEventListener('click', () => {
