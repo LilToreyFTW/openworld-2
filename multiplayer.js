@@ -3,25 +3,16 @@
  * ONE server for the entire game. Everyone sees everyone.
  * 
  * HOW IT WORKS:
- * - Each player connects via THEIR OWN internet connection to the ONE server
- * - The server receives updates from each player (position, name, level)
- * - The server broadcasts ALL players to EVERYONE (everyone sees everyone)
- * - Works the same from Vercel (web) and from the exe (browser)
+ * - Vercel API (/api/server) returns the canonical WebSocket URL (set VIRTUALSIM_WS_URL in Vercel).
+ * - Each player connects via THEIR OWN internet to that ONE server.
+ * - Local: ws://localhost:8765. Production: URL from /api/server.
  * - No other servers. No shards. One canonical endpoint.
  */
 
 (function () {
-  // ——— THE ONE SERVER (canonical endpoint — acts like the game's single "IP") ———
-  // Each player uses their own internet to connect here. Everyone sees everyone.
-  // Deploy game-server/ to Fly.io, Railway, or Render and set VIRTUALSIM_ONE_SERVER below.
-  const VIRTUALSIM_ONE_SERVER = 'wss://virtualsim-one-server.fly.dev'; // single server URL
-  const GAME_SERVER_WS_URL = (function () {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'ws://localhost:8765';
-    }
-    return VIRTUALSIM_ONE_SERVER;
-  })();
+  // ——— THE ONE SERVER URL ———
+  // Local: ws://localhost:8765. Production: fetched from Vercel /api/server (env VIRTUALSIM_WS_URL).
+  let GAME_SERVER_WS_URL = null;
 
   let ws = null;
   let myId = null;
@@ -61,13 +52,13 @@
     _onMessage: null
   };
 
-  function connect() {
+  function connect(url) {
+    const targetUrl = url || GAME_SERVER_WS_URL;
+    if (!targetUrl) return;
     if (ws && ws.readyState === WebSocket.OPEN) return;
     try {
-      ws = new WebSocket(GAME_SERVER_WS_URL);
+      ws = new WebSocket(targetUrl);
     } catch (e) {
-      // Silently handle connection errors - server may not be running
-      // Connection will retry automatically
       return;
     }
 
@@ -134,5 +125,25 @@
     };
   }
 
-  connect();
+  // Resolve WS URL: localhost → ws://localhost:8765; production → /api/server
+  (function init() {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      GAME_SERVER_WS_URL = 'ws://localhost:8765';
+      connect();
+      return;
+    }
+    fetch('/api/server')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.wsUrl) {
+          GAME_SERVER_WS_URL = d.wsUrl;
+          connect();
+        }
+      })
+      .catch(function () {
+        GAME_SERVER_WS_URL = 'wss://virtualsim-one-server.fly.dev';
+        connect();
+      });
+  })();
 })();

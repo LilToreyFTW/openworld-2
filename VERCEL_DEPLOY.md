@@ -79,10 +79,16 @@ After deployment, these endpoints will be available:
 - `GET /api/quests` - Quest info
 - `GET /api/weapons` - Weapon info
 - `GET /api/leveling` - Leveling system info
+- **`GET /api/server`** - Canonical WebSocket URL for the ONE game server (used by multiplayer.js). Returns `{ wsUrl, status, gameModes }`.
+- **`GET /api/game-modes`** - Game mode config for matchmaking (TDM, Domination, CTF, S&D, Zombies).
 
 ## Environment Variables
 
-No environment variables required for basic deployment.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| **VIRTUALSIM_WS_URL** | Yes for multiplayer | WebSocket URL of the ONE game server. Deploy `game-server/` to Fly.io, Railway, or Render and set this to `wss://your-app.fly.dev` (or your URL). The client fetches it from `/api/server`. |
+
+Without `VIRTUALSIM_WS_URL`, the API falls back to `wss://virtualsim-one-server.fly.dev`.
 
 ## Custom Domain
 
@@ -91,11 +97,17 @@ No environment variables required for basic deployment.
 3. Go to Settings → Domains
 4. Add your custom domain
 
+## Server mode & game modes
+
+- **Vercel** serves the site and the **REST API** (`/api/server`, `/api/game-modes`, health, quests, etc.). It does **not** run WebSockets.
+- **ONE game server** (real-time multiplayer, matchmaking, TDM/S&D/Domination/CTF/Zombies) must run on **Fly.io, Railway, or Render**. Deploy the `game-server/` folder there, then set **VIRTUALSIM_WS_URL** in Vercel to that WebSocket URL.
+- The client gets the WebSocket URL from **GET /api/server** and connects for multiplayer and matchmaking. Game modes are listed from **GET /api/game-modes**.
+
 ## Notes
 
 - **Game data**: Stored client-side in `localStorage` (browser)
-- **Server logic**: C++ server runs locally (not on Vercel)
-- **API**: Node.js serverless functions handle API requests
+- **WebSocket server**: Deploy `game-server/` to Fly/Railway/Render; set `VIRTUALSIM_WS_URL` in Vercel
+- **API**: Node.js serverless functions on Vercel handle REST (server URL, game modes, health, quests, etc.)
 - **Static files**: All HTML/JS/CSS served from Vercel CDN
 
 ## Troubleshooting

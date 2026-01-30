@@ -25,7 +25,7 @@ fly launch
 fly deploy
 ```
 
-Then set the URL in the game client: in `multiplayer.js`, set the production URL to your Fly app, e.g. `wss://virtualsim-one-server.fly.dev`.
+Then set the URL in **Vercel**: Project → Settings → Environment Variables → add `VIRTUALSIM_WS_URL` = `wss://your-app.fly.dev`. The client fetches it from `/api/server`.
 
 ### Option 2: Railway
 
@@ -36,12 +36,12 @@ railway init
 railway up
 ```
 
-Set `multiplayer.js` production URL to your Railway WebSocket URL (e.g. `wss://virtualsim-one-server.railway.app`).
+In Vercel, set env `VIRTUALSIM_WS_URL` to your Railway WebSocket URL (e.g. `wss://virtualsim-one-server.railway.app`).
 
 ### Option 3: Render (Web Service)
 
 - New Web Service, build: `npm install`, start: `npm start`.
-- Set the URL in `multiplayer.js` to your Render URL (use WebSocket: `wss://your-app.onrender.com`).
+- In Vercel, set env `VIRTUALSIM_WS_URL` to `wss://your-app.onrender.com`.
 
 ### Option 4: Run locally (development)
 
@@ -55,12 +55,7 @@ Server runs on `ws://localhost:8765`. The client already uses this when the game
 
 ## Canonical URL (the "IP")
 
-After deployment, you get **one** URL. That URL is the game’s single server. Put it in `multiplayer.js`:
-
-```javascript
-// In multiplayer.js — production URL (the one server)
-return 'wss://your-deployed-server.fly.dev';  // or .railway.app, .onrender.com, etc.
-```
+After deployment, you get **one** URL. That URL is the game’s single server. Configure it in **Vercel**: Project → Settings → Environment Variables → add **VIRTUALSIM_WS_URL** = `wss://your-deployed-server.fly.dev`. The game fetches `/api/server` and connects. No code change needed.
 
 There are no other servers. Everyone uses this URL.
 
