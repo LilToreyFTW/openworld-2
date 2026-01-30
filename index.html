@@ -1,0 +1,3390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Sim Hangout — Open World</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #0a0a1a; font-family: 'Segoe UI', system-ui, sans-serif; }
+    canvas { display: block; }
+    #ui {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+    #ui > * { pointer-events: auto; }
+    #title {
+      background: linear-gradient(135deg, rgba(100,80,200,0.9), rgba(60,40,120,0.9));
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      align-self: flex-start;
+    }
+    #hangout-prompt {
+      background: rgba(0,0,0,0.75);
+      color: #b8e0ff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      align-self: center;
+      border: 1px solid rgba(100,180,255,0.4);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    #hangout-prompt.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #building-prompt {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: #64b5f6;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 100;
+      border: 1px solid rgba(100,181,246,0.4);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+    #building-prompt.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #status {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    #location {
+      background: rgba(0,0,0,0.6);
+      color: rgba(255,255,255,0.9);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    #controls {
+      background: rgba(0,0,0,0.6);
+      color: rgba(255,255,255,0.75);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+    #travel {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    #travel a {
+      background: rgba(0,0,0,0.7);
+      color: #b8e0ff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-decoration: none;
+      border: 1px solid rgba(100,180,255,0.3);
+    }
+    #travel a:hover { background: rgba(40,60,100,0.6); color: #fff; }
+    #toolbelt {
+      position: fixed;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 280px;
+      background: rgba(20,20,40,0.95);
+      border: 2px solid rgba(100,180,255,0.4);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+    #toolbelt.minimized {
+      width: 200px;
+      height: auto;
+      overflow: hidden;
+    }
+    #toolbelt.minimized #toolbelt-content {
+      display: none;
+    }
+    #toolbelt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #toolbelt-header:hover { opacity: 0.9; }
+    #toolbelt h3 {
+      color: #b8e0ff;
+      font-size: 14px;
+      margin: 0;
+      border-bottom: 1px solid rgba(100,180,255,0.3);
+      padding-bottom: 4px;
+      flex: 1;
+    }
+    #toolbelt-toggle {
+      background: rgba(100,180,255,0.2);
+      border: 1px solid rgba(100,180,255,0.4);
+      border-radius: 4px;
+      color: #b8e0ff;
+      padding: 4px 8px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #toolbelt-toggle:hover {
+      background: rgba(100,180,255,0.3);
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      color: #e0e0e0;
+    }
+    .stat-name { opacity: 0.9; }
+    .stat-level { color: #8b5cf6; font-weight: 600; }
+    .stat-xp { font-size: 10px; opacity: 0.7; }
+    .health-bar-container {
+      background: rgba(0,0,0,0.5);
+      border-radius: 4px;
+      height: 20px;
+      margin: 8px 0;
+      overflow: hidden;
+      border: 1px solid rgba(255,100,100,0.3);
+    }
+    .health-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff4444, #ff6666);
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .equipment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .equip-slot {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(100,180,255,0.2);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      font-size: 10px;
+      min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .equip-slot.empty { opacity: 0.5; }
+    .equip-slot.filled { border-color: rgba(139,92,246,0.5); }
+    .equip-label { font-size: 9px; opacity: 0.7; margin-bottom: 4px; }
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .inv-slot {
+      aspect-ratio: 1;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(100,180,255,0.2);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .inv-slot.empty { opacity: 0.3; }
+    .inv-slot.filled { border-color: rgba(139,92,246,0.4); cursor: pointer; }
+    .inv-slot.filled:hover { border-color: rgba(139,92,246,0.7); background: rgba(139,92,246,0.1); }
+    .equip-slot { cursor: pointer; }
+    .equip-slot.filled:hover { border-color: rgba(255,100,80,0.6); background: rgba(255,100,80,0.1); }
+    .equip-slot.empty:hover { border-color: rgba(100,180,255,0.5); }
+    .context-menu {
+      position: fixed;
+      background: rgba(20,20,40,0.98);
+      border: 1px solid rgba(100,180,255,0.5);
+      border-radius: 8px;
+      padding: 4px 0;
+      z-index: 1000;
+      min-width: 120px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .context-menu.show { display: block; }
+    .context-menu-item {
+      padding: 8px 16px;
+      color: #b8e0ff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .context-menu-item:hover {
+      background: rgba(100,180,255,0.2);
+      color: #fff;
+    }
+    .level-up-notif {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(139,92,246,0.95);
+      color: #fff;
+      padding: 20px 40px;
+      border-radius: 12px;
+      font-size: 24px;
+      font-weight: 700;
+      z-index: 10000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .level-up-notif.show {
+      opacity: 1;
+      animation: levelUpPulse 1.5s ease;
+    }
+    @keyframes levelUpPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    #radar {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      width: 200px;
+      height: 200px;
+      background: rgba(10,10,20,0.98);
+      border: 3px solid rgba(100,180,255,0.5);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+    #radar-header {
+      background: rgba(0,0,0,0.7);
+      padding: 4px 8px;
+      font-size: 10px;
+      color: #b8e0ff;
+      text-align: center;
+      border-bottom: 1px solid rgba(100,180,255,0.4);
+      font-weight: 600;
+    }
+    #radar-canvas {
+      width: 100%;
+      height: calc(100% - 24px);
+      display: block;
+    }
+    #radar-compass {
+      position: absolute;
+      top: 20px;
+      right: 8px;
+      width: 40px;
+      height: 40px;
+      pointer-events: none;
+    }
+    .compass-rose {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .compass-n {
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ff4444;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .compass-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 16px;
+      background: #ff4444;
+      transform-origin: center bottom;
+    }
+  </style>
+  <script src="toolbelt.js"></script>
+  <script src="weapons.js"></script>
+  <script src="multiplayer.js"></script>
+  <script src="matchmaking.js"></script>
+  <script src="weather.js"></script>
+  <script src="quests.js"></script>
+  <script src="combat.js"></script>
+  <script src="settings.js"></script>
+  <script src="shop.js"></script>
+  <script src="achievements.js"></script>
+  <script src="pets.js"></script>
+</head>
+<body>
+  <audio id="main-soundtrack" loop>
+    <source src="game-soundtrack/Haveila(dreadnaught spacemap animated).mp3" type="audio/mpeg">
+  </audio>
+  <div id="toolbelt">
+    <div id="toolbelt-header">
+      <h3>Tool Belt</h3>
+      <button id="toolbelt-toggle" title="Minimize/Expand">−</button>
+    </div>
+    <div id="toolbelt-content">
+      <div style="background: rgba(139,92,246,0.2); padding: 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(139,92,246,0.4);">
+        <div style="font-size: 11px; color: #b8e0ff; margin-bottom: 4px;">Player Level</div>
+        <div style="font-size: 18px; font-weight: 700; color: #fff;" id="player-level">1</div>
+        <div style="font-size: 9px; color: #888; margin-top: 2px;" id="player-xp">0 / 100 XP</div>
+        <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; margin-top: 4px; overflow: hidden;">
+          <div id="player-xp-bar" style="height: 100%; background: linear-gradient(90deg, rgba(139,92,246,0.8), rgba(100,80,200,0.8)); width: 0%; transition: width 0.3s;"></div>
+        </div>
+      </div>
+      <div class="health-bar-container">
+        <div class="health-bar" id="health-bar">100/100</div>
+      </div>
+      <div>
+        <h3>Stats</h3>
+        <div id="stats-list"></div>
+      </div>
+      <div style="margin-top: 12px;">
+        <h3>Equipment</h3>
+        <div class="equipment-grid" id="equipment-grid"></div>
+      </div>
+      <div style="margin-top: 12px;">
+        <h3>Inventory</h3>
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </div>
+    </div>
+  </div>
+  <div id="level-up-notif" class="level-up-notif">Level Up!</div>
+  <div id="building-prompt">Press E to enter building</div>
+  <div id="ui">
+    <div id="title">Doom Patrol Tower — TOWER HUB · Gatherings Area</div>
+    <p id="hub-subtitle" style="align-self: flex-start; margin-top: 4px; margin-left: 0; font-size: 11px; opacity: 0.85;">First hub after Doom Patrol Mission (intro). 7 Planets: Maruno · Sasfire · Dreadnaught IX · Haveila · Nexus Prime · Void's Edge</p>
+    <div id="online-indicator" style="position: fixed; top: 12px; left: 12px; background: rgba(0,0,0,0.75); color: #4ecdc4; padding: 6px 12px; border-radius: 8px; font-size: 12px; z-index: 90; border: 1px solid rgba(78,205,196,0.4);" title="Each player connects via their own internet. Everyone sees everyone.">
+      <span id="online-text">ONE SERVER · Online: —</span>
+    </div>
+    <div id="weather-indicator" style="position: fixed; top: 50px; left: 12px; background: rgba(0,0,0,0.85); color: #ff6b6b; padding: 6px 12px; border-radius: 8px; font-size: 12px; z-index: 90; border: 1px solid rgba(255,107,107,0.5); font-weight: 600; animation: weatherPulse 3s ease-in-out infinite;">
+      <span id="weather-text">🌙 Night</span>
+    </div>
+    <style>
+      @keyframes weatherPulse {
+        0%, 100% { opacity: 0.9; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.02); }
+      }
+    </style>
+    <div id="hangout-prompt" class=""></div>
+    <div id="status">
+      <div id="location">Exploring</div>
+      <div id="controls">WASD or Arrows — Move · Scroll — Zoom · Click — Walk here</div>
+    </div>
+  </div>
+    <div id="radar">
+      <div id="radar-header">Radar Map</div>
+      <canvas id="radar-canvas"></canvas>
+      <div id="radar-compass">
+        <div class="compass-rose">
+          <div class="compass-n">N</div>
+          <div class="compass-needle" id="compass-needle"></div>
+        </div>
+      </div>
+    </div>
+    <div id="travel" style="top: 220px;">
+    <a href="game.html">Main Menu</a>
+    <a href="haveila.html">Haveila</a>
+    <a href="weapon-camos.html">Armory</a>
+    <button id="quest-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">📜 Quests</button>
+    <button id="matchmaking-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🎮 Multiplayer</button>
+    <button id="shop-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🛒 Shop</button>
+    <button id="pets-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🐾 Pets</button>
+    <button id="settings-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">⚙️ Settings</button>
+    <button id="music-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">▶ Main soundtrack</button>
+  </div>
+  
+  <!-- Quest Log UI -->
+  <div id="quest-log" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 320px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(100,180,255,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #fff; font-size: 16px;">Quest Log</h3>
+      <button id="quest-log-close" style="background: transparent; border: none; color: #b8e0ff; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    <div id="active-quests-list"></div>
+    <div style="margin-top: 20px; border-top: 1px solid rgba(100,180,255,0.3); padding-top: 12px;">
+      <h4 style="color: #b8e0ff; font-size: 14px; margin-bottom: 8px;">Available Quests</h4>
+      <div id="available-quests-list"></div>
+    </div>
+  </div>
+  
+  <!-- Shop UI -->
+  <div id="shop-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 400px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(255,215,0,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+  
+  <!-- Pet Management UI -->
+  <div id="pets-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 420px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(255,182,193,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #ffb6c1; font-size: 16px;">🐾 Pet Management</h3>
+      <button id="pets-close" style="background: transparent; border: none; color: #ffb6c1; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    <div style="margin-bottom: 12px; padding: 8px; background: rgba(255,182,193,0.1); border-radius: 6px;">
+      <div style="color: #ffb6c1; font-size: 12px;">Gold: <span id="pets-gold-display">0</span></div>
+    </div>
+    <div style="margin-bottom: 12px;">
+      <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px;">Buy Pet</h4>
+      <div id="pets-shop-list" style="max-height: 200px; overflow-y: auto;"></div>
+    </div>
+    <div>
+      <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px;">My Pets</h4>
+      <div id="pets-list" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+  </div>
+  
+  <!-- Pet Skills UI -->
+  <div id="pet-skills-ui" style="display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 500px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(255,215,0,0.4); border-radius: 12px; padding: 20px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="color: #ffd700; font-size: 18px;">⚔️ Pet Skills</h3>
+      <button id="pet-skills-close" style="background: transparent; border: none; color: #ffd700; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div id="pet-skills-content"></div>
+  </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #ffd700; font-size: 16px;">🛒 Shop</h3>
+      <div style="color: #ffd700; font-size: 14px;">Gold: <span id="shop-gold">0</span></div>
+      <button id="shop-close" style="background: transparent; border: none; color: #b8e0ff; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    <div id="shop-inventory-list"></div>
+  </div>
+  
+  <!-- Settings UI -->
+  <div id="settings-ui" style="display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 500px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(100,180,255,0.4); border-radius: 12px; padding: 20px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="color: #fff; font-size: 18px;">⚙️ Settings</h3>
+      <button id="settings-close" style="background: transparent; border: none; color: #b8e0ff; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    <div id="settings-content"></div>
+  </div>
+  
+  <!-- Matchmaking UI -->
+  <div id="matchmaking-ui" style="display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 600px; max-height: 80vh; background: rgba(20,20,40,0.98); border: 2px solid rgba(100,180,255,0.4); border-radius: 12px; padding: 20px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="color: #fff; font-size: 18px;">🎮 Multiplayer Matchmaking</h3>
+      <button id="matchmaking-close" style="background: transparent; border: none; color: #b8e0ff; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    <div style="margin-bottom: 16px; color: #b8e0ff; font-size: 12px;">5v5 Lobbies · 10 players max · Auto-matchmaking when 5+ players online</div>
+    <div id="matchmaking-modes"></div>
+    <div id="matchmaking-lobby" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(100,180,255,0.3);">
+      <h4 style="color: #b8e0ff; font-size: 14px; margin-bottom: 12px;">Your Lobby</h4>
+      <div id="lobby-info"></div>
+      <div id="lobby-teams"></div>
+    </div>
+  </div>
+  
+  <!-- Achievement Notification -->
+  <div id="achievement-notif" style="display: none; position: fixed; top: 80px; right: 12px; background: rgba(139,92,246,0.95); color: #fff; padding: 16px 20px; border-radius: 12px; z-index: 10000; min-width: 250px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+    <div style="font-size: 24px; margin-bottom: 4px;" id="achievement-icon">🏆</div>
+    <div style="font-weight: 700; font-size: 16px;" id="achievement-name">Achievement Unlocked!</div>
+    <div style="font-size: 12px; opacity: 0.9;" id="achievement-desc"></div>
+  </div>
+  
+  <!-- NPC Interaction UI -->
+  <div id="npc-dialog" style="display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(20,20,40,0.98); border: 2px solid rgba(100,180,255,0.4); border-radius: 12px; padding: 20px; max-width: 500px; z-index: 300; box-shadow: 0 4px 20px rgba(0,0,0,0.7);">
+    <div style="color: #fff; font-size: 16px; margin-bottom: 12px;" id="npc-name">NPC Name</div>
+    <div style="color: #b8e0ff; font-size: 14px; margin-bottom: 16px;" id="npc-text">Dialog text...</div>
+    <div id="npc-options"></div>
+    <button id="npc-close" style="margin-top: 12px; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close</button>
+  </div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    // Make THREE available globally for weather.js
+    window.THREE = THREE;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e); // Dark background but not too dark
+
+    // View angle/size: load from memory (localStorage), default 500
+    const VIEW_ANGLE_STORAGE_KEY = 'virtualSimViewAngle';
+    const VIEW_SIZE_MIN = 200;
+    const VIEW_SIZE_MAX = 1200;
+    const VIEW_SIZE_DEFAULT = 500;
+    let viewSize = VIEW_SIZE_DEFAULT;
+    try {
+      const saved = localStorage.getItem(VIEW_ANGLE_STORAGE_KEY);
+      if (saved != null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= VIEW_SIZE_MIN && parsed <= VIEW_SIZE_MAX) {
+          viewSize = parsed;
+        }
+      }
+    } catch (_) {}
+    function saveViewAngleToMemory() {
+      try {
+        localStorage.setItem(VIEW_ANGLE_STORAGE_KEY, String(viewSize));
+      } catch (_) {}
+    }
+    function setViewAngle(size) {
+      viewSize = Math.max(VIEW_SIZE_MIN, Math.min(VIEW_SIZE_MAX, size));
+      saveViewAngleToMemory();
+    }
+    window.getViewAngle = () => viewSize;
+    window.setViewAngle = setViewAngle;
+    window.saveViewAngleToMemory = saveViewAngleToMemory;
+
+    const aspect = window.innerWidth / window.innerHeight;
+    const camera = new THREE.OrthographicCamera(
+      -viewSize * aspect, viewSize * aspect,
+      viewSize, -viewSize,
+      -1000, 1000  // Extended far/near planes
+    );
+    camera.position.set(0, 0, 100);
+    camera.lookAt(0, 0, 0);
+    
+    // Debug: Verify camera setup
+    console.log(`Camera setup: position (${camera.position.x}, ${camera.position.y}, ${camera.position.z}), viewSize: ${viewSize}`);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    
+    // Store references for weather updates (will be set after world creation)
+    window.gameScene = scene;
+
+    // 10km x 10km world (10000 x 10000 units)
+    const WORLD_SIZE = 10000;
+    const gridW = 25;
+    const gridH = 25;
+    const cellW = WORLD_SIZE / gridW;
+    const cellH = WORLD_SIZE / gridH;
+    const streetWidth = 8;
+    const blockW = cellW - streetWidth;
+    const blockH = cellH - streetWidth;
+    const totalW = WORLD_SIZE;
+    const totalH = WORLD_SIZE;
+    const startX = -totalW / 2 + cellW / 2;
+    const startY = -totalH / 2 + cellH / 2;
+    const buildScale = blockW / 14;
+
+    const streetMeshes = [];
+    function createStreet(x, y, width, length, rotZ = 0) {
+      const g = new THREE.PlaneGeometry(width, length);
+      const m = new THREE.MeshBasicMaterial({ color: 0x3d3d5c });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(x, y, 0);
+      mesh.rotation.z = rotZ;
+      scene.add(mesh);
+      streetMeshes.push({ mesh, material: m });
+    }
+
+    // Building data for accessibility/interaction
+    const buildingData = new Map(); // buildingId -> { x, y, w, d, accessible, doorX, doorY }
+    let buildingIdCounter = 0;
+
+    function createBuilding(x, y, w, d, color, isHouse = false) {
+      const buildingId = buildingIdCounter++;
+      const height = isHouse ? d * 0.5 : d * 0.7; // Building height
+      const depth = w * 0.2; // Isometric depth
+      
+      // Base/foundation (bottom face - darker)
+      const baseColor = new THREE.Color(color);
+      baseColor.multiplyScalar(0.5);
+      const baseGeom = new THREE.PlaneGeometry(w * 1.05, d * 1.05);
+      const baseMat = new THREE.MeshBasicMaterial({ color: baseColor.getHex() });
+      const baseMesh = new THREE.Mesh(baseGeom, baseMat);
+      baseMesh.position.set(x, y, -0.02);
+      scene.add(baseMesh);
+      buildingMeshes.push({ mesh: baseMesh, material: baseMat, isHouse, buildingId });
+      
+      // Front face (main wall) - positioned lower to show height
+      const frontGeom = new THREE.PlaneGeometry(w, height);
+      const frontMat = new THREE.MeshBasicMaterial({ color });
+      const frontMesh = new THREE.Mesh(frontGeom, frontMat);
+      frontMesh.position.set(x, y - height/2, -0.01);
+      scene.add(frontMesh);
+      buildingMeshes.push({ mesh: frontMesh, material: frontMat, isHouse, buildingId });
+      
+      // Left side wall (isometric depth - darker)
+      const leftColor = new THREE.Color(color);
+      leftColor.multiplyScalar(0.65);
+      const leftGeom = new THREE.PlaneGeometry(depth, height);
+      const leftMat = new THREE.MeshBasicMaterial({ color: leftColor.getHex() });
+      const leftMesh = new THREE.Mesh(leftGeom, leftMat);
+      leftMesh.position.set(x - w/2 - depth/2, y - height/2, -0.012);
+      leftMesh.rotation.z = Math.PI / 4; // 45 degree angle for isometric
+      scene.add(leftMesh);
+      buildingMeshes.push({ mesh: leftMesh, material: leftMat, isHouse, buildingId });
+      
+      // Right side wall (isometric depth - slightly lighter)
+      const rightColor = new THREE.Color(color);
+      rightColor.multiplyScalar(0.75);
+      const rightGeom = new THREE.PlaneGeometry(depth, height);
+      const rightMat = new THREE.MeshBasicMaterial({ color: rightColor.getHex() });
+      const rightMesh = new THREE.Mesh(rightGeom, rightMat);
+      rightMesh.position.set(x + w/2 + depth/2, y - height/2, -0.012);
+      rightMesh.rotation.z = -Math.PI / 4; // -45 degree angle
+      scene.add(rightMesh);
+      buildingMeshes.push({ mesh: rightMesh, material: rightMat, isHouse, buildingId });
+      
+      // Top face (roof or flat top)
+      const topColor = isHouse ? 0x8b4513 : new THREE.Color(color).multiplyScalar(0.85).getHex();
+      const topGeom = new THREE.PlaneGeometry(w * 1.1, depth * 1.4);
+      const topMat = new THREE.MeshBasicMaterial({ color: topColor });
+      const topMesh = new THREE.Mesh(topGeom, topMat);
+      topMesh.position.set(x, y - height - depth * 0.3, -0.018);
+      topMesh.rotation.z = Math.PI / 4; // Rotated for isometric top view
+      scene.add(topMesh);
+      buildingMeshes.push({ mesh: topMesh, material: topMat, isHouse, buildingId });
+      
+      // Door/Entry point (visible marker on front face)
+      const doorSize = Math.min(w * 0.18, height * 0.35);
+      const doorGeom = new THREE.PlaneGeometry(doorSize, doorSize * 1.8);
+      const doorMat = new THREE.MeshBasicMaterial({ color: 0x654321, transparent: true, opacity: 0.95 });
+      const doorMesh = new THREE.Mesh(doorGeom, doorMat);
+      const doorX = x;
+      const doorY = y - height/2 + doorSize * 0.9; // Near bottom of front face
+      doorMesh.position.set(doorX, doorY, -0.005);
+      scene.add(doorMesh);
+      buildingMeshes.push({ mesh: doorMesh, material: doorMat, isHouse, buildingId, isDoor: true });
+      
+      // Windows (detail for city buildings)
+      if (!isHouse) {
+        const windowSize = w * 0.12;
+        const windowCount = Math.floor(w / (windowSize * 1.5));
+        for (let i = 0; i < windowCount && i < 3; i++) {
+          const windowGeom = new THREE.PlaneGeometry(windowSize, windowSize);
+          const windowMat = new THREE.MeshBasicMaterial({ color: 0x87ceeb, transparent: true, opacity: 0.7 });
+          const windowMesh = new THREE.Mesh(windowGeom, windowMat);
+          const offsetX = -w/3 + (i * w/3);
+          windowMesh.position.set(
+            x + offsetX,
+            y - height/2 + height * 0.5,
+            -0.006
+          );
+          scene.add(windowMesh);
+          buildingMeshes.push({ mesh: windowMesh, material: windowMat, isHouse, buildingId });
+        }
+      }
+      
+      // Store building data for interaction
+      buildingData.set(buildingId, {
+        x, y, w, d, height, depth,
+        doorX, doorY,
+        accessible: true,
+        isHouse,
+        color
+      });
+      
+      return buildingId;
+    }
+
+    for (let row = 0; row <= gridH; row++) {
+      for (let col = 0; col <= gridW; col++) {
+        const px = startX + col * cellW;
+        const py = startY + row * cellH;
+        if (col < gridW) createStreet(px + cellW / 2, py, streetWidth, cellH);
+        if (row < gridH) createStreet(px, py + cellH / 2, cellW, streetWidth, 0);
+      }
+    }
+
+    const houseColors = [0xcd853f, 0xdaa520, 0xbc8f8f, 0xd2691e, 0x8fbc8f, 0x87ceeb];
+    const cityColors = [0x4682b4, 0x5f9ea0, 0x696969, 0x708090, 0x778899];
+    const buildingMeshes = [];
+
+    const s = buildScale;
+    for (let row = 0; row < gridH; row++) {
+      for (let col = 0; col < gridW; col++) {
+        const baseX = startX + col * cellW + streetWidth / 2 + blockW / 2;
+        const baseY = startY + row * cellH + streetWidth / 2 + blockH / 2;
+        const n = row * gridW + col;
+        if (n % 4 === 0) {
+          createBuilding(baseX - 2*s, baseY, 3*s, 2.5*s, houseColors[n % houseColors.length], true);
+          createBuilding(baseX + 2*s, baseY, 2.8*s, 2.2*s, houseColors[(n + 1) % houseColors.length], true);
+          createBuilding(baseX, baseY + 3*s, 4*s, 2*s, houseColors[(n + 2) % houseColors.length], true);
+        } else if (n % 4 === 1) {
+          createBuilding(baseX, baseY, 5*s, 3.5*s, cityColors[n % cityColors.length], false);
+          createBuilding(baseX - 3*s, baseY - 2*s, 2*s, 2*s, houseColors[n % houseColors.length], true);
+        } else if (n % 4 === 2) {
+          createBuilding(baseX - 2.5*s, baseY, 2.5*s, 2.5*s, houseColors[n % houseColors.length], true);
+          createBuilding(baseX + 2.5*s, baseY, 2.5*s, 2.5*s, houseColors[(n + 2) % houseColors.length], true);
+          createBuilding(baseX, baseY - 2.5*s, 4*s, 2*s, cityColors[(n + 1) % cityColors.length], false);
+        } else {
+          createBuilding(baseX, baseY, 6*s, 4*s, cityColors[n % cityColors.length], false);
+          createBuilding(baseX - 3.5*s, baseY + 2*s, 2.2*s, 2.2*s, houseColors[(n + 1) % houseColors.length], true);
+          createBuilding(baseX + 3.2*s, baseY - 1.5*s, 2*s, 2.5*s, houseColors[(n + 3) % houseColors.length], true);
+        }
+      }
+    }
+    
+    // Store building data globally for interaction
+    window.buildingData = buildingData;
+    
+    // Quest markers/blimps system (declare early)
+    const questMarkers = new Map(); // questId -> { meshes: [], trail: null }
+    const questTrails = new Map(); // questId -> { line: null, points: [] }
+    
+    // Ensure questManager is available globally
+    if (typeof questManager !== 'undefined') {
+      window.questManager = questManager;
+    }
+
+    const plaza = new THREE.Mesh(
+      new THREE.PlaneGeometry(blockW * 0.8, blockH * 0.7),
+      new THREE.MeshBasicMaterial({ color: 0x228b22 })
+    );
+    plaza.position.set(0, 0, -0.005);
+    scene.add(plaza);
+    const plazaMaterial = plaza.material;
+    
+    // Debug: Log that city map is created
+    console.log(`City map created: ${buildingMeshes.length} buildings, ${streetMeshes.length} streets, plaza at (0,0)`);
+    console.log(`Scene children count: ${scene.children.length}`);
+    console.log(`First building color: ${buildingMeshes[0]?.material?.color?.getHex()}`);
+    console.log(`First street color: ${streetMeshes[0]?.material?.color?.getHex()}`);
+
+    // —— Hangout zones (name, x, y, radius) — 10km scale ——
+    const zoneR = 400;
+    const hangoutZones = [
+      { name: 'Central Plaza', x: 0, y: 0, radius: zoneR * 1.2 },
+      { name: 'North Cafe', x: startX + cellW * 1.5 + 2*s, y: startY + cellH * 3 - 2*s, radius: zoneR },
+      { name: 'East Lounge', x: startX + cellW * 4 - 3*s, y: startY + cellH * 2, radius: zoneR },
+      { name: 'South Park', x: startX + cellW * 2, y: startY + cellH * 0.5 - 2*s, radius: zoneR * 1.1 },
+      { name: 'West Rooftop', x: startX + 4*s, y: startY + cellH * 1.5, radius: zoneR },
+      { name: 'Downtown Spot', x: startX + cellW * 2.5, y: startY + cellH * 1.5, radius: zoneR * 0.9 },
+      { name: 'Quiet Corner', x: startX + cellW - 2*s, y: startY + cellH * 3.5 - 2*s, radius: zoneR * 0.9 },
+      { name: 'North Quarter Hub', x: 0, y: 3500, radius: zoneR },
+      { name: 'South Beach Spot', x: -2000, y: -3500, radius: zoneR },
+      { name: 'East Side Lounge', x: 3800, y: 0, radius: zoneR },
+      { name: 'West Gardens', x: -3800, y: 1000, radius: zoneR },
+    ];
+
+    // NPCs at hangouts (simple circles) — radius scales with 10km world
+    const npcRadius = 30;
+    const npcs = [];
+    function createNPC(x, y, color) {
+      const shape = new THREE.Shape();
+      shape.absarc(0, 0, npcRadius, 0, Math.PI * 2);
+      const g = new THREE.ShapeGeometry(shape);
+      const m = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(x, y, -0.03);
+      scene.add(mesh);
+      npcs.push({ x, y, color });
+    }
+    createNPC(150, 150, 0xffb6c1);
+    createNPC(-150, -80, 0x98fb98);
+    createNPC(200, -150, 0x87ceeb);
+    createNPC(startX + cellW * 4 - 2*s, startY + cellH * 2 + 1*s, 0xffd700);
+    createNPC(startX + cellW * 2 + 1*s, startY + cellH * 0.5, 0xdda0dd);
+    createNPC(0, 3500, 0xffa07a);
+    createNPC(-2000, -3500, 0x7fffd4);
+    createNPC(3800, 0, 0xd8bfd8);
+
+    // Store references for weather updates
+    window.buildingMeshes = buildingMeshes;
+    window.streetMeshes = streetMeshes;
+    
+    // Debug: Verify city map is ready
+    console.log(`City map ready: ${buildingMeshes.length} buildings, ${streetMeshes.length} streets`);
+    
+    // Initialize weather system (after world is created)
+    if (window.weatherSystem) {
+      weatherSystem.createFogMesh(scene, WORLD_SIZE);
+      weatherSystem.createParticles(scene, 120); // More particles for atmosphere
+      weatherSystem.setOnWeatherChange(function(weather) {
+        // Update scene background with smooth transition
+        const currentBg = scene.background.getHex();
+        const targetBg = weather.bgColor;
+        const r1 = (currentBg >> 16) & 0xff;
+        const g1 = (currentBg >> 8) & 0xff;
+        const b1 = currentBg & 0xff;
+        const r2 = (targetBg >> 16) & 0xff;
+        const g2 = (targetBg >> 8) & 0xff;
+        const b2 = targetBg & 0xff;
+        let transitionStep = 0;
+        const transitionInterval = setInterval(() => {
+          transitionStep += 0.1;
+          if (transitionStep >= 1) {
+            transitionStep = 1;
+            clearInterval(transitionInterval);
+          }
+          const r = Math.floor(r1 + (r2 - r1) * transitionStep);
+          const g = Math.floor(g1 + (g2 - g1) * transitionStep);
+          const b = Math.floor(b1 + (b2 - b1) * transitionStep);
+          scene.background.setRGB(r / 255, g / 255, b / 255);
+        }, 50);
+        
+        // Update weather indicator
+        const weatherEl = document.getElementById('weather-text');
+        if (weatherEl) {
+          const icons = {
+            'ExtraSunny': '☀️',
+            'Sunny': '☀️',
+            'Morning': '🌅',
+            'Noon': '🌤️',
+            'Midnight': '🌑',
+            'Night': '🌙',
+            'Summer': '🔥'
+          };
+          weatherEl.textContent = `${icons[weatherSystem.currentState] || '🌙'} ${weather.name}`;
+          // Update indicator color based on weather
+          const indicator = document.getElementById('weather-indicator');
+          if (indicator) {
+            const darkWeathers = ['Midnight', 'Night'];
+            if (darkWeathers.includes(weatherSystem.currentState)) {
+              indicator.style.borderColor = 'rgba(139,0,0,0.7)';
+              indicator.style.color = '#ff4444';
+            } else {
+              indicator.style.borderColor = 'rgba(255,107,107,0.5)';
+              indicator.style.color = '#ff6b6b';
+            }
+          }
+        }
+        
+        // Update street colors
+        streetMeshes.forEach(({ material }) => {
+          material.color.setHex(weather.streetColor);
+        });
+        
+        // Update building brightness (store original colors on first call)
+        if (!window._buildingOriginalColors) {
+          window._buildingOriginalColors = new Map();
+          buildingMeshes.forEach(({ mesh, material }) => {
+            window._buildingOriginalColors.set(mesh.uuid, material.color.getHex());
+          });
+        }
+        buildingMeshes.forEach(({ mesh, material }) => {
+          const originalColor = window._buildingOriginalColors.get(mesh.uuid) || material.color.getHex();
+          const r = Math.min(255, ((originalColor >> 16) & 0xff) * weather.buildingBrightness);
+          const g = Math.min(255, ((originalColor >> 8) & 0xff) * weather.buildingBrightness);
+          const b = Math.min(255, (originalColor & 0xff) * weather.buildingBrightness);
+          material.color.setRGB(r / 255, g / 255, b / 255);
+        });
+        
+        // Update plaza
+        if (plazaMaterial) {
+          const baseColor = 0x228b22;
+          const r = Math.min(255, ((baseColor >> 16) & 0xff) * weather.buildingBrightness);
+          const g = Math.min(255, ((baseColor >> 8) & 0xff) * weather.buildingBrightness);
+          const b = Math.min(255, (baseColor & 0xff) * weather.buildingBrightness);
+          plazaMaterial.color.setRGB(r / 255, g / 255, b / 255);
+        }
+        
+        // Update fog
+        weatherSystem.updateFog(weather);
+      });
+      
+      // Start with Night (dark but still visible)
+      weatherSystem.setWeather('Night');
+    }
+
+    // Quest marker functions (questMarkers and questTrails declared above)
+    function createQuestMarker(quest, isActive = false) {
+      if (!quest.location) return null;
+      
+      const markerId = `quest_${quest.id}`;
+      const meshes = [];
+      
+      // Main quest blimp (floating marker)
+      // Yellow for available, Green for active
+      const blimpRadius = 45;
+      const blimpShape = new THREE.Shape();
+      blimpShape.absarc(0, 0, blimpRadius, 0, Math.PI * 2);
+      const blimpGeom = new THREE.ShapeGeometry(blimpShape);
+      const blimpColor = isActive ? (quest.category === 'Space' ? 0x00ff88 : 0x00ff88) : (quest.category === 'Space' ? 0xffaa00 : 0xffff00);
+      const blimpMat = new THREE.MeshBasicMaterial({ color: blimpColor, transparent: true, opacity: 0.85 });
+      const blimpMesh = new THREE.Mesh(blimpGeom, blimpMat);
+      blimpMesh.position.set(quest.location.x, quest.location.y, -0.03);
+      scene.add(blimpMesh);
+      meshes.push(blimpMesh);
+      
+      // Quest icon (exclamation mark or quest symbol) - white for visibility
+      const iconSize = 24;
+      const iconGeom = new THREE.PlaneGeometry(iconSize, iconSize);
+      const iconMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+      const iconMesh = new THREE.Mesh(iconGeom, iconMat);
+      iconMesh.position.set(quest.location.x, quest.location.y, -0.028);
+      scene.add(iconMesh);
+      meshes.push(iconMesh);
+      
+      // Pulsing glow effect
+      const glowGeom = new THREE.ShapeGeometry(new THREE.Shape().absarc(0, 0, blimpRadius * 1.4, 0, Math.PI * 2));
+      const glowMat = new THREE.MeshBasicMaterial({ color: blimpColor, transparent: true, opacity: 0.4 });
+      const glowMesh = new THREE.Mesh(glowGeom, glowMat);
+      glowMesh.position.set(quest.location.x, quest.location.y, -0.032);
+      scene.add(glowMesh);
+      meshes.push(glowMesh);
+      
+      questMarkers.set(quest.id, { meshes, quest, glowMesh, isActive });
+      return { meshes, quest };
+    }
+    
+    function createQuestTrail(quest, playerX, playerY) {
+      if (!quest.location || !quest.objectives || quest.objectives.length === 0) return null;
+      
+      // Get the first objective location (or quest location)
+      const targetLoc = quest.objectives[0].location || quest.location;
+      if (!targetLoc) return null;
+      
+      // Create a trail line from player to objective
+      const points = [
+        new THREE.Vector3(playerX, playerY, -0.025),
+        new THREE.Vector3(targetLoc.x, targetLoc.y, -0.025)
+      ];
+      
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ 
+        color: quest.category === 'Space' ? 0xffaa00 : 0x00ff88,
+        transparent: true,
+        opacity: 0.6,
+        linewidth: 3
+      });
+      const line = new THREE.Line(geometry, material);
+      scene.add(line);
+      
+      questTrails.set(quest.id, { line, quest, targetLoc });
+      return { line, quest, targetLoc };
+    }
+    
+    function updateQuestMarkers() {
+      // Remove old markers
+      questMarkers.forEach(({ meshes }) => {
+        meshes.forEach(mesh => scene.remove(mesh));
+      });
+      questMarkers.clear();
+      
+      // Remove old trails
+      questTrails.forEach(({ line }) => {
+        scene.remove(line);
+      });
+      questTrails.clear();
+      
+      if (!window.questManager && typeof questManager === 'undefined') return;
+      const qm = window.questManager || questManager;
+      
+      // Show available quests as yellow markers (not accepted yet - must accept from quest tab)
+      const availableQuests = questManager.getAvailableQuests();
+      availableQuests.forEach(quest => {
+        if (quest.location) {
+          createQuestMarker(quest, false); // Yellow - not accepted
+        }
+      });
+      
+      // Show active quests as green markers with trails
+      const activeQuests = qm.getActiveQuests();
+      activeQuests.forEach(quest => {
+        if (quest.location) {
+          createQuestMarker(quest, true); // Green - active
+          // Create trail to current objective
+          const currentObjective = quest.progress.find(obj => obj.current < obj.count);
+          if (currentObjective && currentObjective.location) {
+            createQuestTrail(quest, playerState.x, playerState.y);
+          } else if (quest.location) {
+            createQuestTrail(quest, playerState.x, playerState.y);
+          }
+        }
+      });
+    }
+    
+    // Initialize quest markers on load (after all functions are defined)
+    setTimeout(() => {
+      // Expose quest marker functions globally
+      window.updateQuestMarkers = updateQuestMarkers;
+      window.questMarkers = questMarkers;
+      window.questTrails = questTrails;
+      
+      if (window.updateQuestMarkers) {
+        updateQuestMarkers();
+      }
+    }, 1000);
+    
+    // Animate quest markers (pulsing and floating)
+    function animateQuestMarkers(time) {
+      questMarkers.forEach(({ meshes, glowMesh, quest, isActive }) => {
+        if (!quest.location) return;
+        
+        // Pulsing glow effect
+        if (glowMesh) {
+          const pulse = Math.sin(time * 0.005) * 0.2 + 0.4;
+          glowMesh.material.opacity = pulse;
+        }
+        
+        // Float animation (gentle up/down movement)
+        meshes.forEach((mesh, idx) => {
+          if (idx === 0) { // Main blimp
+            const baseY = quest.location.y;
+            const floatOffset = Math.sin(time * 0.003 + quest.location.x * 0.001) * 8;
+            mesh.position.y = baseY + floatOffset;
+          } else if (idx === 1) { // Icon follows blimp
+            const baseY = quest.location.y;
+            const floatOffset = Math.sin(time * 0.003 + quest.location.x * 0.001) * 8;
+            mesh.position.y = baseY + floatOffset;
+          } else if (idx === 2) { // Glow follows blimp
+            const baseY = quest.location.y;
+            const floatOffset = Math.sin(time * 0.003 + quest.location.x * 0.001) * 8;
+            mesh.position.y = baseY + floatOffset;
+          }
+        });
+      });
+    }
+
+    // —— Player avatar (scaled for 10km world) ——
+    // Load character appearance from saved state
+    function getCharacterAppearance() {
+      try {
+        const saved = localStorage.getItem('virtualSimGame');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.appearance) {
+            return data.appearance;
+          }
+        }
+      } catch (e) {
+        console.error('Error loading character appearance:', e);
+      }
+      // Default appearance
+      return {
+        face: '#FFDBAC',
+        torso: '#2563EB',
+        arms: '#2563EB',
+        legs: '#1E3A8A'
+      };
+    }
+
+    // Create character mesh with customizable body parts
+    function createCharacterMesh() {
+      const appearance = getCharacterAppearance();
+      const characterGroup = new THREE.Group();
+      
+      const scale = 25; // Base scale for 10km world
+      
+      // Helper to convert hex color to number
+      function hexToNumber(hex) {
+        return parseInt(hex.replace('#', ''), 16);
+      }
+      
+      // LEGS (bottom layer)
+      const legsShape = new THREE.Shape();
+      legsShape.moveTo(-scale * 0.4, 0);
+      legsShape.lineTo(-scale * 0.3, -scale * 1.0);
+      legsShape.lineTo(-scale * 0.1, -scale * 1.0);
+      legsShape.lineTo(0, 0);
+      legsShape.closePath();
+      const legsGeom = new THREE.ShapeGeometry(legsShape);
+      const legsMat = new THREE.MeshBasicMaterial({ color: hexToNumber(appearance.legs) });
+      const leftLeg = new THREE.Mesh(legsGeom, legsMat);
+      leftLeg.position.set(0, 0, -0.04);
+      characterGroup.add(leftLeg);
+      
+      const rightLegShape = new THREE.Shape();
+      rightLegShape.moveTo(scale * 0.4, 0);
+      rightLegShape.lineTo(scale * 0.3, -scale * 1.0);
+      rightLegShape.lineTo(scale * 0.1, -scale * 1.0);
+      rightLegShape.lineTo(0, 0);
+      rightLegShape.closePath();
+      const rightLegGeom = new THREE.ShapeGeometry(rightLegShape);
+      const rightLegMat = new THREE.MeshBasicMaterial({ color: hexToNumber(appearance.legs) });
+      const rightLeg = new THREE.Mesh(rightLegGeom, rightLegMat);
+      rightLeg.position.set(0, 0, -0.04);
+      characterGroup.add(rightLeg);
+      
+      // TORSO (middle layer)
+      const torsoShape = new THREE.Shape();
+      torsoShape.moveTo(-scale * 0.5, 0);
+      torsoShape.lineTo(-scale * 0.5, scale * 1.2);
+      torsoShape.lineTo(scale * 0.5, scale * 1.2);
+      torsoShape.lineTo(scale * 0.5, 0);
+      torsoShape.closePath();
+      const torsoGeom = new THREE.ShapeGeometry(torsoShape);
+      const torsoMat = new THREE.MeshBasicMaterial({ color: hexToNumber(appearance.torso) });
+      const torso = new THREE.Mesh(torsoGeom, torsoMat);
+      torso.position.set(0, 0, -0.039);
+      characterGroup.add(torso);
+      
+      // ARMS (left and right)
+      const armShape = new THREE.Shape();
+      armShape.moveTo(0, 0);
+      armShape.lineTo(-scale * 0.2, scale * 1.0);
+      armShape.lineTo(scale * 0.2, scale * 1.0);
+      armShape.closePath();
+      const armGeom = new THREE.ShapeGeometry(armShape);
+      const armMat = new THREE.MeshBasicMaterial({ color: hexToNumber(appearance.arms) });
+      
+      const leftArm = new THREE.Mesh(armGeom, armMat);
+      leftArm.position.set(-scale * 0.7, scale * 0.1, -0.038);
+      characterGroup.add(leftArm);
+      
+      const rightArm = new THREE.Mesh(armGeom, armMat);
+      rightArm.position.set(scale * 0.7, scale * 0.1, -0.038);
+      characterGroup.add(rightArm);
+      
+      // FACE (top layer - head)
+      const faceShape = new THREE.Shape();
+      faceShape.absarc(0, scale * 1.4, scale * 0.4, 0, Math.PI * 2);
+      const faceGeom = new THREE.ShapeGeometry(faceShape);
+      const faceMat = new THREE.MeshBasicMaterial({ color: hexToNumber(appearance.face) });
+      const face = new THREE.Mesh(faceGeom, faceMat);
+      face.position.set(0, 0, -0.037);
+      characterGroup.add(face);
+      
+      // Eyes on face
+      const eyeShape = new THREE.Shape();
+      eyeShape.absarc(0, 0, scale * 0.06, 0, Math.PI * 2);
+      const eyeGeom = new THREE.ShapeGeometry(eyeShape);
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      
+      const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+      leftEye.position.set(-scale * 0.12, scale * 1.35, -0.036);
+      characterGroup.add(leftEye);
+      
+      const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+      rightEye.position.set(scale * 0.12, scale * 1.35, -0.036);
+      characterGroup.add(rightEye);
+      
+      return characterGroup;
+    }
+    
+    const player = createCharacterMesh();
+    player.position.set(0, 0, 0);
+    scene.add(player);
+    
+    // Pet system - pet following player
+    let petMesh = null;
+    let petSkullMesh = null; // Green skull indicator
+    let petOffset = { x: 0, y: 0 };
+    let petAnimationTime = 0;
+    let petFloor = 0;
+    
+    function updatePetDisplay() {
+      if (!window.petSystem) return;
+      
+      const activePet = window.petSystem.getActivePet();
+      
+      // Remove existing pet meshes
+      if (petMesh) {
+        scene.remove(petMesh);
+        petMesh = null;
+      }
+      if (petSkullMesh) {
+        scene.remove(petSkullMesh);
+        petSkullMesh = null;
+      }
+      
+      // Create pet mesh if active pet exists and is alive
+      if (activePet && activePet.status === 'alive' && !playerInsideBuilding && activePet.isSummoned) {
+        const petSpecies = window.PET_SPECIES || {};
+        const petData = petSpecies[activePet.species];
+        if (petData) {
+          // Main pet body
+          const petShape = new THREE.Shape();
+          petShape.absarc(0, 0, petData.size, 0, Math.PI * 2);
+          const petGeom = new THREE.ShapeGeometry(petShape);
+          const petMat = new THREE.MeshBasicMaterial({ color: petData.color });
+          petMesh = new THREE.Mesh(petGeom, petMat);
+          petMesh.position.set(playerState.x + petOffset.x, playerState.y + petOffset.y, -0.038);
+          scene.add(petMesh);
+          
+          // Green skull indicator (above pet)
+          const skullShape = new THREE.Shape();
+          skullShape.absarc(0, 0, petData.size * 0.6, 0, Math.PI * 2);
+          const skullGeom = new THREE.ShapeGeometry(skullShape);
+          const skullMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.7 });
+          petSkullMesh = new THREE.Mesh(skullGeom, skullMat);
+          petSkullMesh.position.set(playerState.x + petOffset.x, playerState.y + petOffset.y + petData.size + 10, -0.037);
+          scene.add(petSkullMesh);
+          
+          // Update pet position tracking
+          window.petSystem.updatePetPosition(activePet.id, playerState.x + petOffset.x, playerState.y + petOffset.y, petFloor);
+        }
+      }
+    }
+    
+    window.updatePetDisplay = updatePetDisplay;
+    
+    // Initialize pet display
+    setTimeout(() => {
+      updatePetDisplay();
+    }, 1500);
+    
+    // Pet channel integration - auto summon/unsummon
+    if (window.VirtualSimMultiplayer) {
+      const originalOnOpen = window.VirtualSimMultiplayer._ws?.onopen;
+      if (window.VirtualSimMultiplayer._ws) {
+        window.VirtualSimMultiplayer._ws.onopen = function() {
+          if (originalOnOpen) originalOnOpen.call(this);
+          // On channel join (connection), summon pet
+          if (window.petSystem && window.petSystem.activePet) {
+            window.petSystem.onChannelJoin('main');
+            updatePetDisplay();
+          }
+        };
+      }
+      
+      // Hook into connection close
+      const originalOnClose = window.VirtualSimMultiplayer._ws?.onclose;
+      if (window.VirtualSimMultiplayer._ws) {
+        window.VirtualSimMultiplayer._ws.onclose = function() {
+          if (originalOnClose) originalOnClose.call(this);
+          // On channel leave (disconnect), unsummon pet
+          if (window.petSystem) {
+            window.petSystem.onChannelLeave();
+            updatePetDisplay();
+          }
+        };
+      }
+    }
+
+    // —— Other players (single server: everyone sees everyone) ——
+    const otherPlayerMeshes = new Map(); // id -> { mesh, label? }
+    const OTHER_PLAYER_RADIUS = 22;
+
+    function ensureOtherPlayerMesh(id, data) {
+      if (otherPlayerMeshes.has(id)) {
+        const obj = otherPlayerMeshes.get(id);
+        obj.mesh.position.set(data.x, data.y, -0.038);
+        obj.mesh.material.color.setHex(data.color || 0x4ecdc4);
+        if (obj.labelEl) obj.labelEl.textContent = data.name || 'Player';
+        return obj.mesh;
+      }
+      const shape = new THREE.Shape();
+      shape.absarc(0, 0, OTHER_PLAYER_RADIUS, 0, Math.PI * 2);
+      const geom = new THREE.ShapeGeometry(shape);
+      const mat = new THREE.MeshBasicMaterial({ color: data.color || 0x4ecdc4 });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(data.x, data.y, -0.038);
+      scene.add(mesh);
+      otherPlayerMeshes.set(id, { mesh, labelEl: null });
+      return mesh;
+    }
+
+    function removeOtherPlayerMesh(id) {
+      const obj = otherPlayerMeshes.get(id);
+      if (obj && obj.mesh) scene.remove(obj.mesh);
+      otherPlayerMeshes.delete(id);
+    }
+
+    if (window.VirtualSimMultiplayer) {
+      VirtualSimMultiplayer.setOnPlayersUpdate(function () {
+        const others = VirtualSimMultiplayer.getOtherPlayers();
+        const ids = new Set(others.map(p => p.id));
+        otherPlayerMeshes.forEach((_, id) => {
+          if (!ids.has(id)) removeOtherPlayerMesh(id);
+        });
+        others.forEach(function (p) {
+          ensureOtherPlayerMesh(p.id, p);
+        });
+        // Update online indicator (ONE SERVER · Online: N)
+        const onlineEl = document.getElementById('online-text');
+        if (onlineEl) {
+          const total = others.length + 1;
+          onlineEl.textContent = VirtualSimMultiplayer.isConnected()
+            ? 'ONE SERVER · Online: ' + total
+            : 'ONE SERVER · Connecting…';
+        }
+      });
+      // Initial update
+      setTimeout(function () {
+        const onlineEl = document.getElementById('online-text');
+        if (onlineEl) {
+          onlineEl.textContent = VirtualSimMultiplayer.isConnected()
+            ? 'ONE SERVER · Online: ' + (VirtualSimMultiplayer.getOtherPlayers().length + 1)
+            : 'ONE SERVER · Connecting…';
+        }
+      }, 1500);
+    }
+
+    const margin = 300;
+    const playerState = {
+      x: 0, y: 0,
+      vx: 0, vy: 0,
+      speed: 8,  // Reduced from 40 for slower, more controlled movement
+      targetX: null, targetY: null,
+      bounds: { minX: -WORLD_SIZE / 2 + margin, maxX: WORLD_SIZE / 2 - margin, minY: -WORLD_SIZE / 2 + margin, maxY: WORLD_SIZE / 2 - margin },
+    };
+
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, e: false, E: false };
+    let currentNearbyBuilding = null;
+    
+    window.addEventListener('keydown', (e) => {
+      if (keys[e.key] !== undefined) { e.preventDefault(); keys[e.key] = true; }
+      // Building entry
+      if ((e.key === 'e' || e.key === 'E') && currentNearbyBuilding) {
+        enterBuilding(currentNearbyBuilding);
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (keys[e.key] !== undefined) { e.preventDefault(); keys[e.key] = false; }
+    });
+    
+    // Building interior system
+    let playerInsideBuilding = null;
+    let buildingInteriorMeshes = [];
+    let buildingInteriorBounds = null;
+    let interiorCameraOffset = { x: 0, y: 0 };
+    const buildingOldBounds = new Map(); // Store oldBounds by building ID
+    
+    function generateBuildingInterior(building) {
+      // Clear any existing interior
+      buildingInteriorMeshes.forEach(mesh => scene.remove(mesh));
+      buildingInteriorMeshes = [];
+      
+      // Interior dimensions (scaled down from exterior)
+      const interiorWidth = building.w * 0.85;
+      const interiorDepth = building.d * 0.85;
+      const wallThickness = 12;
+      const wallHeight = 60;
+      const ceilingHeight = -0.045;
+      
+      // Seeded random for consistent per-building generation
+      const seed = building.id;
+      function seededRandom(seed) {
+        return ((seed * 9301 + 49297) % 233280) / 233280;
+      }
+      
+      // Floor with pattern/texture
+      const floorGeom = new THREE.PlaneGeometry(interiorWidth, interiorDepth);
+      const floorColor = building.isHouse ? 0xd4a574 : 0x8b7355;
+      const floorMat = new THREE.MeshBasicMaterial({ color: floorColor });
+      const floor = new THREE.Mesh(floorGeom, floorMat);
+      floor.position.set(building.x, building.y, -0.06);
+      floor.userData.isInterior = true;
+      scene.add(floor);
+      buildingInteriorMeshes.push(floor);
+      
+      // Floor pattern (tiles/boards)
+      const tileSize = building.isHouse ? 40 : 50;
+      const tilesW = Math.floor(interiorWidth / tileSize);
+      const tilesD = Math.floor(interiorDepth / tileSize);
+      for (let tx = 0; tx < tilesW; tx++) {
+        for (let ty = 0; ty < tilesD; ty++) {
+          const tileX = building.x - interiorWidth/2 + tx * tileSize + tileSize/2;
+          const tileY = building.y - interiorDepth/2 + ty * tileSize + tileSize/2;
+          const tileGeom = new THREE.PlaneGeometry(tileSize * 0.95, tileSize * 0.95);
+          const tileColor = (tx + ty) % 2 === 0 ? floorColor : 
+            new THREE.Color(floorColor).multiplyScalar(0.9).getHex();
+          const tileMat = new THREE.MeshBasicMaterial({ color: tileColor });
+          const tile = new THREE.Mesh(tileGeom, tileMat);
+          tile.position.set(tileX, tileY, -0.059);
+          tile.userData.isInterior = true;
+          scene.add(tile);
+          buildingInteriorMeshes.push(tile);
+        }
+      }
+      
+      // Ceiling
+      const ceilingGeom = new THREE.PlaneGeometry(interiorWidth, interiorDepth);
+      const ceilingMat = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
+      const ceiling = new THREE.Mesh(ceilingGeom, ceilingMat);
+      ceiling.position.set(building.x, building.y, ceilingHeight);
+      ceiling.userData.isInterior = true;
+      scene.add(ceiling);
+      buildingInteriorMeshes.push(ceiling);
+      
+      // Walls (4 walls around the room)
+      const wallColor = building.isHouse ? 0xe8d5b7 : 0xa0a0a0;
+      const wallMat = new THREE.MeshBasicMaterial({ color: wallColor });
+      
+      // Front wall (with door opening)
+      const frontWallWidth = interiorWidth;
+      const doorWidth = 40;
+      const doorX = building.x;
+      const doorY = building.y + interiorDepth / 2;
+      
+      // Front wall left segment
+      if (frontWallWidth > doorWidth + 20) {
+        const leftWallWidth = (frontWallWidth - doorWidth) / 2;
+        const frontWallLeft = new THREE.Mesh(
+          new THREE.PlaneGeometry(leftWallWidth, wallThickness),
+          wallMat
+        );
+        frontWallLeft.position.set(building.x - doorWidth/2 - leftWallWidth/2, doorY - wallThickness/2, -0.055);
+        frontWallLeft.rotation.z = Math.PI / 2;
+        frontWallLeft.userData.isInterior = true;
+        scene.add(frontWallLeft);
+        buildingInteriorMeshes.push(frontWallLeft);
+        
+        // Front wall right segment
+        const frontWallRight = new THREE.Mesh(
+          new THREE.PlaneGeometry(leftWallWidth, wallThickness),
+          wallMat
+        );
+        frontWallRight.position.set(building.x + doorWidth/2 + leftWallWidth/2, doorY - wallThickness/2, -0.055);
+        frontWallRight.rotation.z = Math.PI / 2;
+        frontWallRight.userData.isInterior = true;
+        scene.add(frontWallRight);
+        buildingInteriorMeshes.push(frontWallRight);
+      }
+      
+      // Back wall
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(interiorWidth, wallThickness),
+        wallMat
+      );
+      backWall.position.set(building.x, building.y - interiorDepth / 2 + wallThickness / 2, -0.055);
+      backWall.rotation.z = Math.PI / 2;
+      backWall.userData.isInterior = true;
+      scene.add(backWall);
+      buildingInteriorMeshes.push(backWall);
+      
+      // Left wall
+      const leftWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(interiorDepth, wallThickness),
+        wallMat
+      );
+      leftWall.position.set(building.x - interiorWidth / 2 + wallThickness / 2, building.y, -0.055);
+      leftWall.userData.isInterior = true;
+      scene.add(leftWall);
+      buildingInteriorMeshes.push(leftWall);
+      
+      // Right wall
+      const rightWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(interiorDepth, wallThickness),
+        wallMat
+      );
+      rightWall.position.set(building.x + interiorWidth / 2 - wallThickness / 2, building.y, -0.055);
+      rightWall.userData.isInterior = true;
+      scene.add(rightWall);
+      buildingInteriorMeshes.push(rightWall);
+      
+      // Windows on side walls
+      const windowSize = 25;
+      const windowCount = Math.floor(interiorDepth / (windowSize * 2));
+      for (let i = 0; i < windowCount && i < 2; i++) {
+        const windowY = building.y - interiorDepth/3 + (i * interiorDepth/2);
+        // Left wall window
+        const leftWindow = new THREE.Mesh(
+          new THREE.PlaneGeometry(windowSize, windowSize),
+          new THREE.MeshBasicMaterial({ color: 0x87ceeb, transparent: true, opacity: 0.6 })
+        );
+        leftWindow.position.set(building.x - interiorWidth/2 + wallThickness/2 + 2, windowY, -0.054);
+        leftWindow.userData.isInterior = true;
+        scene.add(leftWindow);
+        buildingInteriorMeshes.push(leftWindow);
+        
+        // Right wall window
+        const rightWindow = new THREE.Mesh(
+          new THREE.PlaneGeometry(windowSize, windowSize),
+          new THREE.MeshBasicMaterial({ color: 0x87ceeb, transparent: true, opacity: 0.6 })
+        );
+        rightWindow.position.set(building.x + interiorWidth/2 - wallThickness/2 - 2, windowY, -0.054);
+        rightWindow.userData.isInterior = true;
+        scene.add(rightWindow);
+        buildingInteriorMeshes.push(rightWindow);
+      }
+      
+      // Furniture generation based on building type
+      const furnitureItems = [];
+      
+      if (building.isHouse) {
+        // House furniture: bed, table, chairs, dresser, etc.
+        const numRooms = interiorWidth > 150 ? 2 : 1;
+        const roomWidth = interiorWidth / numRooms;
+        
+        for (let room = 0; room < numRooms; room++) {
+          const roomX = building.x - interiorWidth/2 + roomWidth/2 + room * roomWidth;
+          const roomY = building.y;
+          
+          // Bed (in first room or larger rooms)
+          if (room === 0 || interiorWidth > 200) {
+            const bedGeom = new THREE.PlaneGeometry(50, 70);
+            const bedMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+            const bed = new THREE.Mesh(bedGeom, bedMat);
+            bed.position.set(roomX - roomWidth/4, roomY, -0.054);
+            bed.userData.isInterior = true;
+            scene.add(bed);
+            buildingInteriorMeshes.push(bed);
+            
+            // Bed sheets/pillow
+            const pillowGeom = new THREE.PlaneGeometry(20, 15);
+            const pillowMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+            const pillow = new THREE.Mesh(pillowGeom, pillowMat);
+            pillow.position.set(roomX - roomWidth/4, roomY + 25, -0.053);
+            pillow.userData.isInterior = true;
+            scene.add(pillow);
+            buildingInteriorMeshes.push(pillow);
+          }
+          
+          // Table with chairs
+          const tableX = roomX + roomWidth/4;
+          const tableY = roomY;
+          const tableGeom = new THREE.PlaneGeometry(40, 40);
+          const tableMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+          const table = new THREE.Mesh(tableGeom, tableMat);
+          table.position.set(tableX, tableY, -0.054);
+          table.userData.isInterior = true;
+          scene.add(table);
+          buildingInteriorMeshes.push(table);
+          
+          // Chairs around table
+          for (let c = 0; c < 4; c++) {
+            const angle = (c * Math.PI * 2) / 4;
+            const chairX = tableX + Math.cos(angle) * 30;
+            const chairY = tableY + Math.sin(angle) * 30;
+            const chairGeom = new THREE.PlaneGeometry(18, 18);
+            const chairMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+            const chair = new THREE.Mesh(chairGeom, chairMat);
+            chair.position.set(chairX, chairY, -0.054);
+            chair.userData.isInterior = true;
+            scene.add(chair);
+            buildingInteriorMeshes.push(chair);
+          }
+          
+          // Dresser/Cabinet
+          const dresserGeom = new THREE.PlaneGeometry(35, 50);
+          const dresserMat = new THREE.MeshBasicMaterial({ color: 0x654321 });
+          const dresser = new THREE.Mesh(dresserGeom, dresserMat);
+          dresser.position.set(roomX + roomWidth/3, roomY - roomWidth/4, -0.054);
+          dresser.userData.isInterior = true;
+          scene.add(dresser);
+          buildingInteriorMeshes.push(dresser);
+        }
+      } else {
+        // City building furniture: desks, shelves, filing cabinets, etc.
+        const deskCount = Math.floor(interiorWidth / 80);
+        for (let d = 0; d < deskCount && d < 4; d++) {
+          const deskX = building.x - interiorWidth/2 + (d + 0.5) * (interiorWidth / (deskCount + 1));
+          const deskY = building.y;
+          
+          // Desk
+          const deskGeom = new THREE.PlaneGeometry(35, 50);
+          const deskMat = new THREE.MeshBasicMaterial({ color: 0x654321 });
+          const desk = new THREE.Mesh(deskGeom, deskMat);
+          desk.position.set(deskX, deskY, -0.054);
+          desk.userData.isInterior = true;
+          scene.add(desk);
+          buildingInteriorMeshes.push(desk);
+          
+          // Desk chair
+          const chairGeom = new THREE.PlaneGeometry(20, 20);
+          const chairMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
+          const chair = new THREE.Mesh(chairGeom, chairMat);
+          chair.position.set(deskX, deskY - 25, -0.054);
+          chair.userData.isInterior = true;
+          scene.add(chair);
+          buildingInteriorMeshes.push(chair);
+          
+          // Computer/monitor on desk
+          const monitorGeom = new THREE.PlaneGeometry(15, 20);
+          const monitorMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+          const monitor = new THREE.Mesh(monitorGeom, monitorMat);
+          monitor.position.set(deskX, deskY + 10, -0.053);
+          monitor.userData.isInterior = true;
+          scene.add(monitor);
+          buildingInteriorMeshes.push(monitor);
+        }
+        
+        // Filing cabinets along walls
+        const cabinetCount = Math.floor(interiorDepth / 40);
+        for (let c = 0; c < cabinetCount && c < 3; c++) {
+          const cabinetY = building.y - interiorDepth/3 + c * (interiorDepth / (cabinetCount + 1));
+          
+          // Left side cabinet
+          const leftCabinetGeom = new THREE.PlaneGeometry(20, 30);
+          const leftCabinetMat = new THREE.MeshBasicMaterial({ color: 0x696969 });
+          const leftCabinet = new THREE.Mesh(leftCabinetGeom, leftCabinetMat);
+          leftCabinet.position.set(building.x - interiorWidth/3, cabinetY, -0.054);
+          leftCabinet.userData.isInterior = true;
+          scene.add(leftCabinet);
+          buildingInteriorMeshes.push(leftCabinet);
+          
+          // Right side cabinet
+          const rightCabinetGeom = new THREE.PlaneGeometry(20, 30);
+          const rightCabinetMat = new THREE.MeshBasicMaterial({ color: 0x696969 });
+          const rightCabinet = new THREE.Mesh(rightCabinetGeom, rightCabinetMat);
+          rightCabinet.position.set(building.x + interiorWidth/3, cabinetY, -0.054);
+          rightCabinet.userData.isInterior = true;
+          scene.add(rightCabinet);
+          buildingInteriorMeshes.push(rightCabinet);
+        }
+      }
+      
+      // Decorative elements (plants, lamps, etc.)
+      const decorCount = Math.floor(seededRandom(seed) * 3) + 1;
+      for (let i = 0; i < decorCount; i++) {
+        const decorSeed = seed * (i + 1) * 17;
+        const decorX = building.x + ((seededRandom(decorSeed) - 0.5) * interiorWidth * 0.7);
+        const decorY = building.y + ((seededRandom(decorSeed * 3) - 0.5) * interiorDepth * 0.7);
+        const decorType = Math.floor(seededRandom(decorSeed * 5) * 3);
+        
+        let decorGeom, decorMat;
+        if (decorType === 0) {
+          // Plant
+          decorGeom = new THREE.CircleGeometry(8, 6);
+          decorMat = new THREE.MeshBasicMaterial({ color: 0x228b22 });
+        } else if (decorType === 1) {
+          // Lamp
+          decorGeom = new THREE.PlaneGeometry(10, 15);
+          decorMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+        } else {
+          // Decorative box
+          decorGeom = new THREE.PlaneGeometry(12, 12);
+          decorMat = new THREE.MeshBasicMaterial({ color: 0xdeb887 });
+        }
+        
+        const decor = new THREE.Mesh(decorGeom, decorMat);
+        decor.position.set(decorX, decorY, -0.054);
+        decor.userData.isInterior = true;
+        scene.add(decor);
+        buildingInteriorMeshes.push(decor);
+      }
+      
+      // Set interior bounds for player movement
+      buildingInteriorBounds = {
+        minX: building.x - interiorWidth / 2 + wallThickness + 25,
+        maxX: building.x + interiorWidth / 2 - wallThickness - 25,
+        minY: building.y - interiorDepth / 2 + wallThickness + 25,
+        maxY: building.y + interiorDepth / 2 - wallThickness - 25
+      };
+      
+      // Set camera offset to center on building
+      interiorCameraOffset = { x: building.x, y: building.y };
+      
+      return buildingInteriorBounds;
+    }
+    
+    function enterBuilding(building) {
+      if (!building || !building.accessible) return;
+      if (!building.id) {
+        console.error('Building missing id property:', building);
+        return;
+      }
+      playerInsideBuilding = building.id;
+      
+      // Hide exterior world
+      buildingMeshes.forEach(({ mesh, buildingId }) => {
+        mesh.visible = false; // Hide all buildings
+      });
+      streetMeshes.forEach(({ mesh }) => {
+        mesh.visible = false; // Hide streets
+      });
+      
+      // Hide NPCs, quest markers, and other exterior elements
+      if (window.npcMeshes) {
+        npcMeshes.forEach(({ mesh }) => {
+          mesh.visible = false;
+        });
+      }
+      
+      // Hide quest markers
+      questMarkers.forEach(({ meshes }) => {
+        meshes.forEach(mesh => mesh.visible = false);
+      });
+      
+      // Hide quest trails
+      questTrails.forEach(({ line }) => {
+        if (line) line.visible = false;
+      });
+      
+      // Hide pet when entering building
+      if (petMesh) {
+        petMesh.visible = false;
+      }
+      
+      // Generate building interior
+      const bounds = generateBuildingInterior(building);
+      
+      // Reset player position to center of building interior
+      playerState.x = building.x;
+      playerState.y = building.y;
+      player.position.set(playerState.x, playerState.y, 0);
+      
+      // Update player bounds to interior bounds
+      const oldBounds = { ...playerState.bounds };
+      playerState.bounds = bounds;
+      
+      // Store old bounds for restoration on exit
+      if (!building || building.id === undefined) {
+        console.error('Building missing id:', building);
+        return;
+      }
+      buildingOldBounds.set(building.id, oldBounds);
+      
+      // Show exit prompt
+      const buildingPromptEl = document.getElementById('building-prompt');
+      if (buildingPromptEl) {
+        buildingPromptEl.textContent = `Press E to exit ${building.isHouse ? 'house' : 'building'}`;
+        buildingPromptEl.classList.add('visible');
+      }
+      
+      console.log(`Entered building ${building.id} at (${building.x}, ${building.y})`);
+    }
+    
+    function exitBuilding() {
+      if (!playerInsideBuilding) return;
+      
+      // Find the building we're exiting
+      let currentBuilding = null;
+      if (window.buildingData) {
+        window.buildingData.forEach((building, id) => {
+          if (id === playerInsideBuilding) {
+            currentBuilding = { ...building, id };
+          }
+        });
+      }
+      
+      // Remove interior meshes
+      buildingInteriorMeshes.forEach(mesh => {
+        scene.remove(mesh);
+      });
+      buildingInteriorMeshes = [];
+      
+      // Show exterior world again
+      buildingMeshes.forEach(({ mesh }) => {
+        mesh.visible = true;
+      });
+      streetMeshes.forEach(({ mesh }) => {
+        mesh.visible = true;
+      });
+      
+      // Show NPCs again
+      if (window.npcMeshes) {
+        npcMeshes.forEach(({ mesh }) => {
+          mesh.visible = true;
+        });
+      }
+      
+      // Show quest markers again
+      questMarkers.forEach(({ meshes }) => {
+        meshes.forEach(mesh => mesh.visible = true);
+      });
+      
+      // Show quest trails again
+      questTrails.forEach(({ line }) => {
+        if (line) line.visible = true;
+      });
+      
+      // Show pet again when exiting building
+      if (petMesh) {
+        petMesh.visible = true;
+      }
+      
+      // Restore player bounds
+      const savedOldBounds = buildingOldBounds.get(playerInsideBuilding);
+      if (savedOldBounds) {
+        playerState.bounds = savedOldBounds;
+        buildingOldBounds.delete(playerInsideBuilding); // Clean up
+      } else {
+        // Fallback to world bounds
+        const margin = 300;
+        playerState.bounds = {
+          minX: -WORLD_SIZE / 2 + margin,
+          maxX: WORLD_SIZE / 2 - margin,
+          minY: -WORLD_SIZE / 2 + margin,
+          maxY: WORLD_SIZE / 2 - margin
+        };
+      }
+      
+      // Position player at building door
+      if (currentBuilding) {
+        playerState.x = currentBuilding.doorX || currentBuilding.x;
+        playerState.y = currentBuilding.doorY || currentBuilding.y;
+        player.position.set(playerState.x, playerState.y, 0);
+      }
+      
+      // Reset camera offset
+      interiorCameraOffset = { x: 0, y: 0 };
+      buildingInteriorBounds = null;
+      
+      playerInsideBuilding = null;
+      const buildingPromptEl = document.getElementById('building-prompt');
+      if (buildingPromptEl) {
+        buildingPromptEl.classList.remove('visible');
+      }
+      
+      console.log('Exited building');
+    }
+    
+    window.enterBuilding = enterBuilding;
+    window.exitBuilding = exitBuilding;
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+    const hitPoint = new THREE.Vector3();
+
+    renderer.domElement.addEventListener('click', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      raycaster.ray.intersectPlane(groundPlane, hitPoint);
+      playerState.targetX = hitPoint.x;
+      playerState.targetY = hitPoint.y;
+    });
+
+    const camTarget = { x: 0, y: 0 };
+    const promptEl = document.getElementById('hangout-prompt');
+    const locationEl = document.getElementById('location');
+
+    // Radar Map
+    const radarCanvas = document.getElementById('radar-canvas');
+    const radarCtx = radarCanvas.getContext('2d');
+    radarCanvas.width = 200;
+    radarCanvas.height = 176;
+
+    function drawRadar() {
+      const worldMinX = -WORLD_SIZE / 2;
+      const worldMaxX = WORLD_SIZE / 2;
+      const worldMinY = -WORLD_SIZE / 2;
+      const worldMaxY = WORLD_SIZE / 2;
+      const scale = radarCanvas.width / WORLD_SIZE;
+      
+      radarCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+      // Darker radar background (matches weather)
+      const weather = window.weatherSystem ? window.weatherSystem.getCurrentWeather() : null;
+      const radarBg = weather ? weather.bgColor : 0x0a0a1a;
+      radarCtx.fillStyle = '#' + radarBg.toString(16).padStart(6, '0');
+      radarCtx.fillRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+      // Helper to convert world coords to radar coords
+      function worldToRadar(wx, wy) {
+        const rx = (wx - worldMinX) * scale;
+        const ry = (wy - worldMinY) * scale;
+        return { x: rx, y: ry };
+      }
+
+      // Draw streets (grid) - darker, more ominous
+      const streetAlpha = weather && (weather.atmosphere === 'dark' || weather.atmosphere === 'ominous') ? 0.3 : 0.4;
+      radarCtx.strokeStyle = `rgba(30,30,50,${streetAlpha})`;
+      radarCtx.lineWidth = 0.5;
+      for (let row = 0; row <= gridH; row++) {
+        const wy = startY + row * cellH;
+        const r = worldToRadar(0, wy);
+        radarCtx.beginPath();
+        radarCtx.moveTo(0, r.y);
+        radarCtx.lineTo(radarCanvas.width, r.y);
+        radarCtx.stroke();
+      }
+      // Vertical streets
+      for (let col = 0; col <= gridW; col++) {
+        const wx = startX + col * cellW;
+        const r = worldToRadar(wx, 0);
+        radarCtx.beginPath();
+        radarCtx.moveTo(r.x, 0);
+        radarCtx.lineTo(r.x, radarCanvas.height);
+        radarCtx.stroke();
+      }
+
+      // Draw buildings (blocks) - OSRS style (colored blocks)
+      for (let row = 0; row < gridH; row++) {
+        for (let col = 0; col < gridW; col++) {
+          const baseX = startX + col * cellW + streetWidth / 2;
+          const baseY = startY + row * cellH + streetWidth / 2;
+          const n = row * gridW + col;
+          // Different colors for variety (houses vs city buildings)
+          if (n % 4 === 0 || n % 4 === 2) {
+            radarCtx.fillStyle = 'rgba(205,133,63,0.4)'; // Tan/brown for houses
+          } else {
+            radarCtx.fillStyle = 'rgba(70,130,180,0.4)'; // Blue-gray for city buildings
+          }
+          const r1 = worldToRadar(baseX - blockW / 2, baseY - blockH / 2);
+          const r2 = worldToRadar(baseX + blockW / 2, baseY + blockH / 2);
+          radarCtx.fillRect(r1.x, r1.y, (r2.x - r1.x), (r2.y - r1.y));
+        }
+      }
+
+      // Draw plaza (green area)
+      const plazaR = worldToRadar(0, 0);
+      const plazaW = blockW * 0.8 * scale;
+      const plazaH = blockH * 0.7 * scale;
+      radarCtx.fillStyle = 'rgba(34,139,34,0.5)';
+      radarCtx.fillRect(plazaR.x - plazaW / 2, plazaR.y - plazaH / 2, plazaW, plazaH);
+
+      // Draw hangout zones (blue circles)
+      hangoutZones.forEach(zone => {
+        const r = worldToRadar(zone.x, zone.y);
+        const zr = zone.radius * scale;
+        radarCtx.strokeStyle = 'rgba(100,180,255,0.6)';
+        radarCtx.lineWidth = 1.5;
+        radarCtx.beginPath();
+        radarCtx.arc(r.x, r.y, zr, 0, Math.PI * 2);
+        radarCtx.stroke();
+        radarCtx.fillStyle = 'rgba(100,180,255,0.2)';
+        radarCtx.fill();
+      });
+
+      // Draw NPCs (colored dots)
+      npcs.forEach(npc => {
+        const r = worldToRadar(npc.x, npc.y);
+        const hex = npc.color.toString(16).padStart(6, '0');
+        const nr = parseInt(hex.substring(0, 2), 16);
+        const ng = parseInt(hex.substring(2, 4), 16);
+        const nb = parseInt(hex.substring(4, 6), 16);
+        radarCtx.fillStyle = `rgb(${nr},${ng},${nb})`;
+        radarCtx.beginPath();
+        radarCtx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+        radarCtx.fill();
+        radarCtx.strokeStyle = 'rgba(255,255,255,0.8)';
+        radarCtx.lineWidth = 0.5;
+        radarCtx.stroke();
+      });
+
+      // Draw other players (single server: everyone on radar)
+      if (window.VirtualSimMultiplayer) {
+        VirtualSimMultiplayer.getOtherPlayers().forEach(function (p) {
+          const r = worldToRadar(p.x, p.y);
+          const hex = (p.color != null ? p.color : 0x4ecdc4).toString(16).padStart(6, '0');
+          const nr = parseInt(hex.substring(0, 2), 16);
+          const ng = parseInt(hex.substring(2, 4), 16);
+          const nb = parseInt(hex.substring(4, 6), 16);
+          radarCtx.fillStyle = `rgb(${nr},${ng},${nb})`;
+          radarCtx.beginPath();
+          radarCtx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+          radarCtx.fill();
+          radarCtx.strokeStyle = 'rgba(255,255,255,0.7)';
+          radarCtx.lineWidth = 1;
+          radarCtx.stroke();
+        });
+      }
+
+      // Draw player (blue dot with white border)
+      const playerR = worldToRadar(playerState.x, playerState.y);
+      radarCtx.fillStyle = '#64b5f6';
+      radarCtx.beginPath();
+      radarCtx.arc(playerR.x, playerR.y, 3.5, 0, Math.PI * 2);
+      radarCtx.fill();
+      radarCtx.strokeStyle = '#fff';
+      radarCtx.lineWidth = 1.5;
+      radarCtx.stroke();
+      
+      // Player direction arrow
+      if (playerState.vx !== 0 || playerState.vy !== 0) {
+        const angle = Math.atan2(playerState.vy, playerState.vx);
+        radarCtx.strokeStyle = '#64b5f6';
+        radarCtx.fillStyle = '#64b5f6';
+        radarCtx.lineWidth = 2;
+        radarCtx.beginPath();
+        radarCtx.moveTo(playerR.x, playerR.y);
+        const arrowLen = 8;
+        const arrowX = playerR.x + Math.cos(angle) * arrowLen;
+        const arrowY = playerR.y + Math.sin(angle) * arrowLen;
+        radarCtx.lineTo(arrowX, arrowY);
+        radarCtx.stroke();
+        // Arrowhead
+        radarCtx.beginPath();
+        radarCtx.moveTo(arrowX, arrowY);
+        radarCtx.lineTo(arrowX - Math.cos(angle - 0.5) * 4, arrowY - Math.sin(angle - 0.5) * 4);
+        radarCtx.lineTo(arrowX - Math.cos(angle + 0.5) * 4, arrowY - Math.sin(angle + 0.5) * 4);
+        radarCtx.closePath();
+        radarCtx.fill();
+      }
+
+      // Draw viewport bounds (white rectangle showing camera view)
+      const camR = worldToRadar(camTarget.x, camTarget.y);
+      const viewW = (viewSize * aspect * 2) * scale;
+      const viewH = (viewSize * 2) * scale;
+      radarCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+      radarCtx.lineWidth = 1.5;
+      radarCtx.setLineDash([3, 3]);
+      radarCtx.strokeRect(camR.x - viewW / 2, camR.y - viewH / 2, viewW, viewH);
+      radarCtx.setLineDash([]);
+
+      // Border overlay
+      radarCtx.strokeStyle = 'rgba(0,0,0,0.8)';
+      radarCtx.lineWidth = 2;
+      radarCtx.strokeRect(0, 0, radarCanvas.width, radarCanvas.height);
+    }
+
+    // Compass (always points North)
+    function updateCompass() {
+      const needle = document.getElementById('compass-needle');
+      if (needle) {
+        // North is always up (0 degrees)
+        needle.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+      }
+    }
+    updateCompass();
+
+    function getNearestHangout(px, py) {
+      let nearest = null;
+      let minDist = Infinity;
+      for (const zone of hangoutZones) {
+        const d = Math.hypot(zone.x - px, zone.y - py);
+        if (d <= zone.radius && d < minDist) {
+          minDist = d;
+          nearest = zone;
+        }
+      }
+      return nearest;
+    }
+
+    function loop(time) {
+      const dt = 1;
+      const deltaTime = 0.016; // ~60fps for combat
+
+      if (playerState.targetX != null && playerState.targetY != null) {
+        const dx = playerState.targetX - playerState.x;
+        const dy = playerState.targetY - playerState.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 20) {
+          playerState.vx = (dx / dist) * playerState.speed;
+          playerState.vy = (dy / dist) * playerState.speed;
+        } else {
+          playerState.targetX = null;
+          playerState.targetY = null;
+          playerState.vx = 0;
+          playerState.vy = 0;
+        }
+      } else {
+        playerState.vx = 0;
+        playerState.vy = 0;
+        if (keys.w || keys.ArrowUp) playerState.vy = playerState.speed;
+        if (keys.s || keys.ArrowDown) playerState.vy = -playerState.speed;
+        if (keys.a || keys.ArrowLeft) playerState.vx = -playerState.speed;
+        if (keys.d || keys.ArrowRight) playerState.vx = playerState.speed;
+      }
+
+      playerState.x += playerState.vx * dt;
+      playerState.y += playerState.vy * dt;
+      
+      // Constrain player to bounds (exterior world or building interior)
+      playerState.x = Math.max(playerState.bounds.minX, Math.min(playerState.bounds.maxX, playerState.x));
+      playerState.y = Math.max(playerState.bounds.minY, Math.min(playerState.bounds.maxY, playerState.y));
+
+      // Update player mesh position (always visible, including inside buildings)
+      player.position.set(playerState.x, playerState.y, 0);
+      player.visible = true; // Ensure player is always visible
+      
+      // Update pet position (follows player with smooth offset)
+      if (petMesh && !playerInsideBuilding && window.petSystem) {
+        const activePet = window.petSystem.getActivePet();
+        if (activePet && activePet.status === 'alive' && activePet.isSummoned) {
+          petAnimationTime += dt * 0.01;
+          
+          // Pet speed matches player speed (if enabled)
+          const petSpeed = window.petSystem.settings.sameSpeedAsPlayer ? playerState.speed : playerState.speed * 0.9;
+          
+          // Pet follows behind player with slight offset and bobbing animation
+          const followDistance = 35;
+          const angle = Math.atan2(playerState.vy || 0, playerState.vx || 0) + Math.PI; // Behind player
+          petOffset.x = Math.cos(angle) * followDistance + Math.sin(petAnimationTime) * 3;
+          petOffset.y = Math.sin(angle) * followDistance + Math.cos(petAnimationTime * 0.7) * 3;
+          
+          // Calculate target position
+          const targetX = playerState.x + petOffset.x;
+          const targetY = playerState.y + petOffset.y;
+          
+          // Check if pet should teleport (too far or floor changed)
+          const currentPetX = petMesh.position.x;
+          const currentPetY = petMesh.position.y;
+          const distance = Math.hypot(currentPetX - targetX, currentPetY - targetY);
+          
+          if (window.petSystem.shouldTeleportPet(activePet, targetX, targetY, petFloor)) {
+            // Teleport pet to player
+            petMesh.position.set(targetX, targetY, -0.038);
+            if (petSkullMesh) {
+              const petSpecies = window.PET_SPECIES || {};
+              const petData = petSpecies[activePet.species];
+              petSkullMesh.position.set(targetX, targetY + (petData?.size || 15) + 10, -0.037);
+            }
+            window.petSystem.updatePetPosition(activePet.id, targetX, targetY, petFloor);
+          } else {
+            // Smooth pet movement
+            const moveSpeed = distance > 100 ? 0.3 : 0.15; // Faster if far away
+            petMesh.position.x += (targetX - petMesh.position.x) * moveSpeed;
+            petMesh.position.y += (targetY - petMesh.position.y) * moveSpeed;
+            petMesh.position.z = -0.038;
+            
+            // Update skull position
+            if (petSkullMesh) {
+              const petSpecies = window.PET_SPECIES || {};
+              const petData = petSpecies[activePet.species];
+              petSkullMesh.position.set(petMesh.position.x, petMesh.position.y + (petData?.size || 15) + 10, -0.037);
+            }
+            
+            // Update pet position tracking
+            window.petSystem.updatePetPosition(activePet.id, petMesh.position.x, petMesh.position.y, petFloor);
+          }
+        }
+      }
+
+      // Sync to ONE server (everyone sees everyone) — throttle to ~10 updates/sec
+      if (window.VirtualSimMultiplayer && VirtualSimMultiplayer.isConnected()) {
+        if (!window._lastMultiplayerSend) window._lastMultiplayerSend = 0;
+        if (time - window._lastMultiplayerSend > 100) {
+          window._lastMultiplayerSend = time;
+          const charName = (function () {
+            try {
+              const s = localStorage.getItem('virtualSimGame');
+              return s ? (JSON.parse(s).characterName || 'Player') : 'Player';
+            } catch (_) { return 'Player'; }
+          })();
+          VirtualSimMultiplayer.sendUpdate({
+            name: charName,
+            x: playerState.x,
+            y: playerState.y,
+            level: toolBelt.getPlayerLevel(),
+            color: 0x64b5f6
+          });
+        }
+      }
+
+      // Update other players from server
+      if (window.VirtualSimMultiplayer) {
+        VirtualSimMultiplayer.getOtherPlayers().forEach(function (p) {
+          ensureOtherPlayerMesh(p.id, p);
+        });
+      }
+
+      // Camera follows player, but adjusts for building interior
+      if (playerInsideBuilding && interiorCameraOffset) {
+        // When inside building, camera focuses on interior center with zoom
+        camTarget.x = interiorCameraOffset.x;
+        camTarget.y = interiorCameraOffset.y;
+        // Zoom in closer when inside building
+        const aspect = window.innerWidth / window.innerHeight;
+        const interiorViewSize = 120; // Smaller view when inside
+        camera.left = -interiorViewSize * aspect;
+        camera.right = interiorViewSize * aspect;
+        camera.top = interiorViewSize;
+        camera.bottom = -interiorViewSize;
+        camera.updateProjectionMatrix();
+      } else {
+        // Normal exterior camera - smooth follow player (viewSize from memory)
+        camTarget.x += (playerState.x - camTarget.x) * 0.08;
+        camTarget.y += (playerState.y - camTarget.y) * 0.08;
+        const aspect = window.innerWidth / window.innerHeight;
+        camera.left = -viewSize * aspect;
+        camera.right = viewSize * aspect;
+        camera.top = viewSize;
+        camera.bottom = -viewSize;
+        camera.updateProjectionMatrix();
+      }
+      
+      camera.position.set(camTarget.x, camTarget.y, 100);
+      camera.lookAt(camTarget.x, camTarget.y, 0);
+
+      const zone = getNearestHangout(playerState.x, playerState.y);
+      if (zone) {
+        promptEl.textContent = `Hang out at ${zone.name}`;
+        promptEl.classList.add('visible');
+        locationEl.textContent = zone.name;
+      } else {
+        promptEl.classList.remove('visible');
+        locationEl.textContent = 'Exploring';
+      }
+      
+      // Check for nearby buildings (accessibility) - only if not inside a building
+      if (!playerInsideBuilding) {
+        let nearestBuilding = null;
+        let minDist = Infinity;
+        if (window.buildingData) {
+          window.buildingData.forEach((building, id) => {
+            if (!building.accessible) return;
+            const dist = Math.hypot(building.doorX - playerState.x, building.doorY - playerState.y);
+            if (dist < 80 && dist < minDist) {
+              minDist = dist;
+              nearestBuilding = { ...building, id };
+            }
+          });
+        }
+        
+        currentNearbyBuilding = nearestBuilding;
+        
+        // Show building entry prompt
+        const buildingPromptEl = document.getElementById('building-prompt');
+        if (nearestBuilding && buildingPromptEl) {
+          buildingPromptEl.textContent = `Press E to enter ${nearestBuilding.isHouse ? 'house' : 'building'}`;
+          buildingPromptEl.classList.add('visible');
+        } else if (buildingPromptEl) {
+          buildingPromptEl.classList.remove('visible');
+        }
+      } else {
+        // Inside building - check for exit
+        if ((keys.e || keys.E) && playerInsideBuilding) {
+          exitBuilding();
+        }
+      }
+
+      // Update quest markers and trails
+      const questMgr1 = window.questManager || (typeof questManager !== 'undefined' ? questManager : null);
+      if (questMgr1) {
+        // Update quest markers every 60 frames (once per second)
+        if (!window._questMarkerUpdateCount) window._questMarkerUpdateCount = 0;
+        window._questMarkerUpdateCount++;
+        if (window._questMarkerUpdateCount % 60 === 0) {
+          updateQuestMarkers();
+        }
+        
+        // Animate quest markers
+        animateQuestMarkers(time);
+        
+        // Update quest trails (reposition based on player position)
+        questTrails.forEach(({ line, quest, targetLoc }) => {
+          if (line && targetLoc) {
+            const points = [
+              new THREE.Vector3(playerState.x, playerState.y, -0.025),
+              new THREE.Vector3(targetLoc.x, targetLoc.y, -0.025)
+            ];
+            line.geometry.setFromPoints(points);
+            line.geometry.attributes.position.needsUpdate = true;
+          }
+        });
+      }
+      
+      // Update weather system (animated weather effects)
+      if (window.weatherSystem) {
+        weatherSystem.update(deltaTime * 16.67); // Convert to ms
+        const weather = weatherSystem.getCurrentWeather();
+        weatherSystem.updateParticles(deltaTime * 16.67, weather);
+        
+        // Animate fog mesh (subtle movement for atmosphere)
+        if (weatherSystem.fogMesh) {
+          weatherSystem.fogMesh.position.x = Math.sin(time * 0.0001) * 100;
+          weatherSystem.fogMesh.position.y = Math.cos(time * 0.00015) * 100;
+          // Slight rotation for dynamic fog
+          weatherSystem.fogMesh.rotation.z = Math.sin(time * 0.00005) * 0.02;
+        }
+        
+      }
+      
+      // Update combat system
+      if (window.combatSystem) {
+        const deltaTime = 0.016;
+        combatSystem.update(playerState.x, playerState.y, deltaTime);
+        
+        // Check for enemy kills and update quest progress
+        const killedEnemies = combatSystem.enemies.filter(e => !e.alive);
+        killedEnemies.forEach(() => {
+          if (window.achievementManager) window.achievementManager.recordKill();
+          
+          // Give pet experience from kills (if pet is active and XP gain enabled)
+          if (window.petSystem) {
+            const activePet = window.petSystem.getActivePet();
+            if (activePet && activePet.isSummoned && activePet.experienceGainEnabled) {
+              window.petSystem.addExperienceFromKill(activePet.id, 1);
+            }
+          }
+          
+          // Update quest progress for kill objectives
+          const questMgr3 = window.questManager || (typeof questManager !== 'undefined' ? questManager : null);
+          if (questMgr3) {
+            const activeQuests = questMgr3.getActiveQuests();
+            activeQuests.forEach(quest => {
+              quest.progress.forEach((obj, idx) => {
+                if (obj.type === 'kill' && obj.current < obj.count) {
+                  questMgr3.updateQuestProgress(quest.id, idx, 1);
+                  // Update markers when quest progresses
+                  if (window.updateQuestMarkers) {
+                    updateQuestMarkers();
+                  }
+                }
+              });
+            });
+          }
+        });
+      }
+      
+      // Check for quest objective completion (location-based)
+      const questMgr2 = window.questManager || (typeof questManager !== 'undefined' ? questManager : null);
+      if (questMgr2) {
+        const activeQuests = questMgr2.getActiveQuests();
+        activeQuests.forEach(quest => {
+          quest.progress.forEach((obj, idx) => {
+            if (obj.type === 'reach' && obj.location && obj.current < obj.count) {
+              const dist = Math.hypot(playerState.x - obj.location.x, playerState.y - obj.location.y);
+              if (dist < 100) { // Within 100 units
+                questMgr2.updateQuestProgress(quest.id, idx, 1);
+                if (window.updateQuestMarkers) {
+                  updateQuestMarkers();
+                }
+              }
+            }
+          });
+        });
+      }
+      
+      drawRadar();
+      
+      // Debug: Log rendering info occasionally
+      if (!window._renderCount) window._renderCount = 0;
+      window._renderCount++;
+      if (window._renderCount === 60) {
+        console.log(`Rendering: Scene has ${scene.children.length} objects`);
+        console.log(`Camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
+        console.log(`Player position: (${playerState.x}, ${playerState.y})`);
+        console.log(`Buildings in scene: ${buildingMeshes.length}, Streets: ${streetMeshes.length}`);
+      }
+      
+      renderer.render(scene, camera);
+      
+      // XP tracking for movement
+      if (!window._moveCount) window._moveCount = 0;
+      window._moveCount++;
+      if (window._moveCount % 300 === 0 && (playerState.vx !== 0 || playerState.vy !== 0)) {
+        toolBelt.addXP('Questing', 5);
+        updateToolBelt();
+      }
+      
+      requestAnimationFrame(loop);
+    }
+
+    // Start the game loop
+    loop(0);
+
+    window.addEventListener('resize', () => {
+      const aspect = window.innerWidth / window.innerHeight;
+      camera.left = -viewSize * aspect;
+      camera.right = viewSize * aspect;
+      camera.top = viewSize;
+      camera.bottom = -viewSize;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Scroll to zoom: change view angle and write to memory
+    renderer.domElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 1 : -1;
+      const step = 30;
+      setViewAngle(viewSize + delta * step);
+    }, { passive: false });
+
+    const mainSoundtrack = document.getElementById('main-soundtrack');
+    mainSoundtrack.volume = 0.4;
+    try {
+      const saved = localStorage.getItem('virtualSimGame');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.characterName) {
+          const sub = document.getElementById('hub-subtitle');
+          if (sub) sub.textContent = 'Welcome, ' + data.characterName + ' · Hub after Doom Patrol Mission. 7 Planets: Maruno · Sasfire · Dreadnaught IX · Haveila · Nexus Prime · Void\'s Edge';
+        }
+      }
+    } catch (_) {}
+    document.getElementById('music-btn').addEventListener('click', () => {
+      if (mainSoundtrack.paused) {
+        mainSoundtrack.play().catch(() => {});
+        document.getElementById('music-btn').textContent = '⏸ Main soundtrack';
+      } else {
+        mainSoundtrack.pause();
+        document.getElementById('music-btn').textContent = '▶ Main soundtrack';
+      }
+    });
+    mainSoundtrack.addEventListener('play', () => { document.getElementById('music-btn').textContent = '⏸ Main soundtrack'; });
+    mainSoundtrack.addEventListener('pause', () => { document.getElementById('music-btn').textContent = '▶ Main soundtrack'; });
+
+    // Tool Belt UI
+    function updateToolBelt() {
+      const belt = toolBelt;
+      
+      // Update player level display
+      const playerLevelEl = document.getElementById('player-level');
+      const playerXPEl = document.getElementById('player-xp');
+      const playerXPBar = document.getElementById('player-xp-bar');
+      const playerLevel = belt.getPlayerLevel();
+      const xpProgress = belt.getPlayerXPProgress();
+      if (playerLevelEl) {
+        playerLevelEl.textContent = playerLevel;
+        if (playerLevel >= 2000) {
+          playerLevelEl.textContent = '2000 (MAX)';
+          playerLevelEl.style.color = '#ffd700';
+        }
+      }
+      if (playerXPEl) {
+        playerXPEl.textContent = `${xpProgress.current} / ${xpProgress.needed} XP`;
+        if (playerLevel >= 2000) {
+          playerXPEl.textContent = 'MAX LEVEL';
+        }
+      }
+      if (playerXPBar) {
+        playerXPBar.style.width = xpProgress.percent + '%';
+      }
+      
+      const healthBar = document.getElementById('health-bar');
+      const pct = (belt.health.current / belt.health.max) * 100;
+      healthBar.style.width = pct + '%';
+      healthBar.textContent = `${belt.health.current}/${belt.health.max}`;
+      if (pct < 30) healthBar.style.background = 'linear-gradient(90deg, #ff0000, #ff4444)';
+      else if (pct < 60) healthBar.style.background = 'linear-gradient(90deg, #ff8800, #ffaa44)';
+      else healthBar.style.background = 'linear-gradient(90deg, #ff4444, #ff6666)';
+
+      const statsList = document.getElementById('stats-list');
+      statsList.innerHTML = '';
+      for (const [name, stat] of Object.entries(belt.stats)) {
+        const row = document.createElement('div');
+        row.className = 'stat-row';
+        const xpPct = (stat.xp / stat.xpToNext * 100).toFixed(0);
+        row.innerHTML = `
+          <span class="stat-name">${name}</span>
+          <span>
+            <span class="stat-level">${stat.level}</span>
+            <span class="stat-xp"> (${xpPct}%)</span>
+          </span>
+        `;
+        statsList.appendChild(row);
+      }
+
+      const equipGrid = document.getElementById('equipment-grid');
+      equipGrid.innerHTML = '';
+      const slots = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'gloves', 'shield'];
+      slots.forEach((slot, idx) => {
+        const div = document.createElement('div');
+        div.className = 'equip-slot ' + (belt.equipment[slot] ? 'filled' : 'empty');
+        div.dataset.slot = slot;
+        const equipItem = belt.equipment[slot];
+        let equipText = equipItem ? equipItem.name : 'Empty';
+        if (equipItem && equipItem.damage) {
+          equipText += ` (${equipItem.damage})`;
+        }
+        div.innerHTML = `
+          <div class="equip-label">${slot.charAt(0).toUpperCase() + slot.slice(1)}</div>
+          <div>${equipText}</div>
+        `;
+        div.addEventListener('click', (e) => handleEquipmentClick(e, slot));
+        equipGrid.appendChild(div);
+      });
+
+      const invGrid = document.getElementById('inventory-grid');
+      invGrid.innerHTML = '';
+      for (let i = 0; i < belt.maxInventorySlots; i++) {
+        const div = document.createElement('div');
+        div.className = 'inv-slot ' + (belt.inventory[i] ? 'filled' : 'empty');
+        div.dataset.index = i;
+        div.textContent = belt.inventory[i] ? belt.inventory[i].name.charAt(0) : '';
+        const item = belt.inventory[i];
+        if (item) {
+          let tooltip = item.name;
+          if (item.damage) tooltip += `\nDamage: ${item.damage}`;
+          if (item.levelReq) tooltip += `\nReq: Level ${item.levelReq}`;
+          div.title = tooltip;
+        } else {
+          div.title = 'Empty';
+        }
+        div.addEventListener('click', (e) => handleInventoryClick(e, i));
+        div.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          handleInventoryRightClick(e, i);
+        });
+        invGrid.appendChild(div);
+      }
+    }
+
+    window.showLevelUp = function(statName, level) {
+      const notif = document.getElementById('level-up-notif');
+      notif.textContent = `${statName} Level ${level}!`;
+      notif.classList.add('show');
+      setTimeout(() => notif.classList.remove('show'), 2000);
+    };
+    
+    window.onPlayerLevelUp = function(level) {
+      const notif = document.getElementById('level-up-notif');
+      notif.textContent = `PLAYER LEVEL ${level}!`;
+      notif.style.background = 'rgba(139,92,246,0.95)';
+      notif.classList.add('show');
+      setTimeout(() => {
+        notif.classList.remove('show');
+        notif.style.background = 'rgba(139,92,246,0.95)';
+      }, 2500);
+    };
+
+    updateToolBelt();
+    setInterval(updateToolBelt, 1000);
+    
+    // ===== GAME SYSTEMS INTEGRATION =====
+    
+    // Store scene reference globally for combat system
+    window.gameScene = scene;
+    
+    // Initialize combat system enemies
+    function initializeCombat() {
+      // Spawn some enemies around the map
+      combatSystem.spawnEnemyWave(5, 500, 500, 200, 'basic');
+      combatSystem.spawnEnemyWave(3, -800, -600, 150, 'bandit');
+      
+      // Create enemy meshes
+      combatSystem.enemies.forEach(enemy => {
+        combatSystem.createEnemyMesh(enemy, scene);
+      });
+    }
+    
+    // Initialize NPCs (quest givers)
+    const questGivers = [
+      { x: 200, y: 200, name: 'Quest Master', quests: [1, 2, 3] },
+      { x: -500, y: 300, name: 'Adventure Guide', quests: [4, 5] },
+      { x: 800, y: -400, name: 'Space Explorer', quests: [26, 27, 28] }
+    ];
+    
+    const npcMeshes = [];
+    questGivers.forEach(npc => {
+      const shape = new THREE.Shape();
+      shape.absarc(0, 0, 30, 0, Math.PI * 2);
+      const geometry = new THREE.ShapeGeometry(shape);
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(npc.x, npc.y, -0.035);
+      scene.add(mesh);
+      npcMeshes.push({ mesh, npc });
+    });
+    
+    // Quest UI handlers
+    document.getElementById('quest-btn').addEventListener('click', () => {
+      const questLog = document.getElementById('quest-log');
+      questLog.style.display = questLog.style.display === 'none' ? 'block' : 'none';
+      updateQuestLog();
+      // Update quest markers when quest log updates
+      setTimeout(() => {
+        if (window.updateQuestMarkers) {
+          updateQuestMarkers();
+        }
+      }, 100);
+      // Initialize quest markers when quest log opens
+      if (window.updateQuestMarkers) {
+        updateQuestMarkers();
+      }
+    });
+    
+    document.getElementById('quest-log-close').addEventListener('click', () => {
+      document.getElementById('quest-log').style.display = 'none';
+    });
+    
+    function updateQuestLog() {
+      const activeList = document.getElementById('active-quests-list');
+      const availableList = document.getElementById('available-quests-list');
+      
+      activeList.innerHTML = '';
+      const activeQuests = questManager.getActiveQuests();
+      if (activeQuests.length === 0) {
+        activeList.innerHTML = '<div style="color: #888; font-size: 12px; padding: 8px;">No active quests</div>';
+      } else {
+        activeQuests.forEach(quest => {
+          const div = document.createElement('div');
+          div.style.cssText = 'background: rgba(100,180,255,0.1); padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid rgba(100,180,255,0.3);';
+          div.innerHTML = `
+            <div style="color: #fff; font-weight: 600; margin-bottom: 4px;">${quest.title}</div>
+            <div style="color: #b8e0ff; font-size: 11px; margin-bottom: 8px;">${quest.description}</div>
+            ${quest.progress.map((obj, idx) => {
+              const pct = Math.floor((obj.current / obj.count) * 100);
+              const color = obj.current >= obj.count ? '#00ff88' : '#888';
+              return `<div style="color: ${color}; font-size: 10px;">${obj.type}: ${obj.current}/${obj.count} (${pct}%)</div>`;
+            }).join('')}
+            <button onclick="(window.questManager || questManager).abandonQuest(${quest.id}); updateQuestLog(); if (window.updateQuestMarkers) updateQuestMarkers();" style="margin-top: 8px; background: rgba(255,100,80,0.3); border: 1px solid rgba(255,100,80,0.5); color: #ff6444; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Abandon</button>
+          `;
+          activeList.appendChild(div);
+        });
+      }
+      
+      availableList.innerHTML = '';
+      const availableQuests = questManager.getAvailableQuests();
+      availableQuests.forEach(quest => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: rgba(50,50,70,0.5); padding: 10px; margin-bottom: 6px; border-radius: 6px; cursor: pointer;';
+        div.innerHTML = `
+          <div style="color: #b8e0ff; font-weight: 600; font-size: 12px;">${quest.title}</div>
+          <div style="color: #888; font-size: 10px;">Level ${quest.levelReq} · ${quest.rewardXP} XP · ${quest.rewardGold} Gold</div>
+        `;
+        div.addEventListener('click', () => {
+          // Quest must be accepted from quest tab (this is the quest tab)
+          if (qm.startQuest(quest.id)) {
+            updateQuestLog();
+      // Update quest markers when quest log updates
+      setTimeout(() => {
+        if (window.updateQuestMarkers) {
+          updateQuestMarkers();
+        }
+      }, 100);
+            // Update quest markers when quest is accepted
+            setTimeout(() => {
+              if (window.updateQuestMarkers) {
+                updateQuestMarkers();
+              }
+            }, 100);
+          }
+        });
+        availableList.appendChild(div);
+      });
+    }
+    
+    // Shop UI handlers
+    document.getElementById('shop-btn').addEventListener('click', () => {
+      const shopUI = document.getElementById('shop-ui');
+      shopUI.style.display = shopUI.style.display === 'none' ? 'block' : 'none';
+      updateShopUI();
+    });
+    
+    document.getElementById('shop-close').addEventListener('click', () => {
+      document.getElementById('shop-ui').style.display = 'none';
+    });
+    
+    function updateShopUI() {
+      document.getElementById('shop-gold').textContent = shop.gold.toLocaleString();
+      const inventoryList = document.getElementById('shop-inventory-list');
+      inventoryList.innerHTML = '';
+      
+      const shopItems = shop.getShopInventory();
+      shopItems.forEach(item => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: rgba(50,50,70,0.5); padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;';
+        div.innerHTML = `
+          <div>
+            <div style="color: #fff; font-weight: 600; font-size: 13px;">${item.name}</div>
+            <div style="color: #888; font-size: 11px;">${item.type === 'weapon' ? `Damage: ${item.damage} · Range: ${item.range}` : item.description || ''}</div>
+            ${item.levelReq ? `<div style="color: #ff8800; font-size: 10px;">Level ${item.levelReq} required</div>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <div style="color: #ffd700; font-weight: 600; font-size: 14px;">${item.price} Gold</div>
+            <button onclick="if(shop.buyItem(${item.id})) { updateShopUI(); updateToolBelt(); }" style="margin-top: 4px; background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">Buy</button>
+          </div>
+        `;
+        inventoryList.appendChild(div);
+      });
+    }
+    
+    // Matchmaking UI handlers
+    document.getElementById('matchmaking-btn').addEventListener('click', () => {
+      const matchmakingUI = document.getElementById('matchmaking-ui');
+      matchmakingUI.style.display = matchmakingUI.style.display === 'none' ? 'block' : 'none';
+      updateMatchmakingUI();
+      if (window.VirtualSimMatchmaking) {
+        window.VirtualSimMatchmaking.getMatchmakingStatus();
+        window.VirtualSimMatchmaking.getMyLobby();
+      }
+    });
+    
+    document.getElementById('matchmaking-close').addEventListener('click', () => {
+      document.getElementById('matchmaking-ui').style.display = 'none';
+    });
+    
+    function updateMatchmakingUI() {
+      const modesEl = document.getElementById('matchmaking-modes');
+      modesEl.innerHTML = '';
+      
+      const modes = [
+        { id: 'TDM', name: 'Team Deathmatch', desc: '5v5 · First to 75 kills' },
+        { id: 'Domination', name: 'Domination', desc: '5v5 · Control points · First to 200' },
+        { id: 'CTF', name: 'Capture The Flag', desc: '5v5 · Capture flags · First to 3' },
+        { id: 'SearchAndDestroy', name: 'Search & Destroy', desc: '5v5 · Attack/Defend · First to 4 rounds' },
+        { id: 'Zombies', name: 'Zombies', desc: 'Co-op · Survive waves' }
+      ];
+      
+      modes.forEach(mode => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: rgba(50,50,70,0.5); padding: 16px; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(100,180,255,0.3);';
+        const currentQueue = window.VirtualSimMatchmaking ? window.VirtualSimMatchmaking.getCurrentQueue() : null;
+        const isQueued = currentQueue === mode.id;
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="color: #fff; font-weight: 600; font-size: 14px; margin-bottom: 4px;">${mode.name}</div>
+              <div style="color: #888; font-size: 11px;">${mode.desc}</div>
+              ${isQueued ? '<div style="color: #4ecdc4; font-size: 11px; margin-top: 4px;">⏳ In Queue...</div>' : ''}
+            </div>
+            <button id="queue-btn-${mode.id}" style="background: ${isQueued ? 'rgba(255,100,80,0.3)' : 'rgba(100,180,255,0.3)'}; border: 1px solid ${isQueued ? 'rgba(255,100,80,0.5)' : 'rgba(100,180,255,0.5)'}; color: ${isQueued ? '#ff6444' : '#b8e0ff'}; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+              ${isQueued ? 'Leave Queue' : 'Join Queue'}
+            </button>
+          </div>
+        `;
+        
+        const btn = div.querySelector(`#queue-btn-${mode.id}`);
+        btn.addEventListener('click', () => {
+          if (isQueued) {
+            if (window.VirtualSimMatchmaking) {
+              window.VirtualSimMatchmaking.leaveQueue();
+              setTimeout(updateMatchmakingUI, 500);
+            }
+          } else {
+            if (window.VirtualSimMatchmaking) {
+              window.VirtualSimMatchmaking.joinQueue(mode.id);
+              setTimeout(updateMatchmakingUI, 500);
+            }
+          }
+        });
+        
+        modesEl.appendChild(div);
+      });
+    }
+    
+    // Matchmaking callbacks
+    if (window.VirtualSimMatchmaking) {
+      window.VirtualSimMatchmaking.setOnQueueUpdate(function(mode, status) {
+        if (mode) {
+          // Queue update for specific mode
+          updateMatchmakingUI();
+        } else if (status) {
+          // Full status update
+          updateMatchmakingUI();
+        }
+      });
+      
+      window.VirtualSimMatchmaking.setOnLobbyUpdate(function(lobby) {
+        const lobbyEl = document.getElementById('matchmaking-lobby');
+        const lobbyInfo = document.getElementById('lobby-info');
+        const lobbyTeams = document.getElementById('lobby-teams');
+        
+        if (lobby) {
+          lobbyEl.style.display = 'block';
+          lobbyInfo.innerHTML = `
+            <div style="color: #fff; font-weight: 600; margin-bottom: 8px;">${lobby.mode} Lobby</div>
+            <div style="color: #b8e0ff; font-size: 12px; margin-bottom: 12px;">
+              ${lobby.players.length}/10 players · ${lobby.state === 'waiting' ? 'Waiting for players...' : 'Game starting...'}
+            </div>
+          `;
+          
+          const alpha = lobby.players.filter(p => p.team === 'Alpha');
+          const bravo = lobby.players.filter(p => p.team === 'Bravo');
+          
+          lobbyTeams.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <div style="color: #ff6b6b; font-weight: 600; margin-bottom: 8px;">Alpha Team (${alpha.length}/5)</div>
+                ${alpha.map(p => `<div style="color: #b8e0ff; font-size: 11px; padding: 4px;">${p.name}</div>`).join('')}
+              </div>
+              <div>
+                <div style="color: #4ecdc4; font-weight: 600; margin-bottom: 8px;">Bravo Team (${bravo.length}/5)</div>
+                ${bravo.map(p => `<div style="color: #b8e0ff; font-size: 11px; padding: 4px;">${p.name}</div>`).join('')}
+              </div>
+            </div>
+            ${lobby.state === 'waiting' ? '<button onclick="if(window.VirtualSimMatchmaking) window.VirtualSimMatchmaking.leaveQueue(); setTimeout(updateMatchmakingUI, 500);" style="margin-top: 12px; background: rgba(255,100,80,0.3); border: 1px solid rgba(255,100,80,0.5); color: #ff6444; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%;">Leave Lobby</button>' : ''}
+          `;
+        } else {
+          lobbyEl.style.display = 'none';
+        }
+      });
+    }
+    
+    // Settings UI handlers
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      const settingsUI = document.getElementById('settings-ui');
+      settingsUI.style.display = settingsUI.style.display === 'none' ? 'block' : 'none';
+      updateSettingsUI();
+    });
+    
+    document.getElementById('settings-close').addEventListener('click', () => {
+      document.getElementById('settings-ui').style.display = 'none';
+    });
+    
+    function updateSettingsUI() {
+      const content = document.getElementById('settings-content');
+      content.innerHTML = `
+        <div style="margin-bottom: 16px;">
+          <label style="color: #b8e0ff; display: block; margin-bottom: 8px;">Graphics Quality</label>
+          <select id="graphics-quality" style="width: 100%; padding: 8px; background: rgba(20,20,40,0.8); border: 1px solid rgba(100,180,255,0.3); color: #fff; border-radius: 6px;">
+            <option value="low" ${settingsManager.get('graphics.quality') === 'low' ? 'selected' : ''}>Low</option>
+            <option value="medium" ${settingsManager.get('graphics.quality') === 'medium' ? 'selected' : ''}>Medium</option>
+            <option value="high" ${settingsManager.get('graphics.quality') === 'high' ? 'selected' : ''}>High</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: #b8e0ff; display: block; margin-bottom: 8px;">Master Volume</label>
+          <input type="range" id="master-volume" min="0" max="100" value="${settingsManager.get('audio.masterVolume') * 100}" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: #b8e0ff; display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" id="auto-attack" ${settingsManager.get('controls.autoAttack') ? 'checked' : ''} style="margin-right: 8px;">
+            Auto Attack
+          </label>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: #b8e0ff; display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" id="show-quest-markers" ${settingsManager.get('gameplay.showQuestMarkers') ? 'checked' : ''} style="margin-right: 8px;">
+            Show Quest Markers
+          </label>
+        </div>
+      `;
+      
+      document.getElementById('graphics-quality').addEventListener('change', (e) => {
+        settingsManager.set('graphics.quality', e.target.value);
+      });
+      document.getElementById('master-volume').addEventListener('input', (e) => {
+        settingsManager.set('audio.masterVolume', e.target.value / 100);
+      });
+      document.getElementById('auto-attack').addEventListener('change', (e) => {
+        settingsManager.set('controls.autoAttack', e.target.checked);
+      });
+      document.getElementById('show-quest-markers').addEventListener('change', (e) => {
+        settingsManager.set('gameplay.showQuestMarkers', e.target.checked);
+      });
+    }
+    
+    // Achievement notification
+    window.onAchievementUnlock = function(achievement) {
+      const notif = document.getElementById('achievement-notif');
+      document.getElementById('achievement-icon').textContent = achievement.icon;
+      document.getElementById('achievement-name').textContent = achievement.name;
+      document.getElementById('achievement-desc').textContent = achievement.description;
+      notif.style.display = 'block';
+      setTimeout(() => {
+        notif.style.display = 'none';
+      }, 4000);
+    };
+    
+    // Quest completion handler
+    window.onQuestComplete = function(quest) {
+      achievementManager.recordQuestComplete();
+      achievementManager.checkAchievements();
+      updateQuestLog();
+      // Update quest markers when quest log updates
+      setTimeout(() => {
+        if (window.updateQuestMarkers) {
+          updateQuestMarkers();
+        }
+      }, 100);
+    };
+    
+    // Player death handler
+    window.onPlayerDeath = function() {
+      toolBelt.health.current = toolBelt.health.max;
+      playerState.x = 0;
+      playerState.y = 0;
+      alert('You died! Respawned at hub.');
+    };
+    
+    // Check NPC interactions
+    setInterval(() => {
+      if (!npcMeshes) return;
+      npcMeshes.forEach(({ mesh, npc }) => {
+        const dist = Math.hypot(mesh.position.x - playerState.x, mesh.position.y - playerState.y);
+        if (dist < 100) {
+          const dialog = document.getElementById('npc-dialog');
+          if (!dialog || dialog.style.display === 'none') {
+            const prompt = document.getElementById('hangout-prompt');
+            prompt.textContent = `Press E to talk to ${npc.name}`;
+            prompt.classList.add('visible');
+          }
+        }
+      });
+    }, 100);
+    
+    // Check achievements periodically
+    setInterval(() => {
+      if (achievementManager) {
+        achievementManager.checkAchievements();
+      }
+    }, 5000);
+    
+    // NPC dialog system
+    function showNPCDialog(npc) {
+      const dialog = document.getElementById('npc-dialog');
+      document.getElementById('npc-name').textContent = npc.name;
+      document.getElementById('npc-text').textContent = `Hello! I have quests available. Would you like to see them?`;
+      
+      const options = document.getElementById('npc-options');
+      options.innerHTML = '';
+      
+      npc.quests.forEach(questId => {
+      const questMgr = window.questManager || (typeof questManager !== 'undefined' ? questManager : null);
+      if (!questMgr) return;
+      const quest = questMgr.getQuest(questId);
+        if (!quest) return;
+        
+        const isActive = questMgr.getActiveQuests().find(q => q.id === questId);
+        const isCompleted = questMgr.getCompletedQuests().includes(questId);
+        
+        if (!isActive && !isCompleted) {
+          const btn = document.createElement('button');
+          btn.textContent = `Accept: ${quest.title}`;
+          btn.style.cssText = 'display: block; width: 100%; margin-bottom: 8px; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 8px; border-radius: 6px; cursor: pointer;';
+          btn.addEventListener('click', () => {
+            if (questMgr.startQuest(questId)) {
+              dialog.style.display = 'none';
+              updateQuestLog();
+      // Update quest markers when quest log updates
+      setTimeout(() => {
+        if (window.updateQuestMarkers) {
+          updateQuestMarkers();
+        }
+      }, 100);
+              if (window.updateQuestMarkers) {
+                updateQuestMarkers();
+              }
+            }
+          });
+          options.appendChild(btn);
+        }
+      });
+      
+      dialog.style.display = 'block';
+    }
+    
+    document.getElementById('npc-close').addEventListener('click', () => {
+      document.getElementById('npc-dialog').style.display = 'none';
+    });
+    
+    // Track E key for NPC interaction
+    let eKeyPressed = false;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        if (!eKeyPressed) {
+          eKeyPressed = true;
+          // Check if near NPC
+          if (npcMeshes) {
+            npcMeshes.forEach(({ mesh, npc }) => {
+              const dist = Math.hypot(mesh.position.x - playerState.x, mesh.position.y - playerState.y);
+              if (dist < 100) {
+                showNPCDialog(npc);
+              }
+            });
+          }
+        }
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        eKeyPressed = false;
+      }
+    });
+    
+    // Pet level up notification
+    window.onPetLevelUp = function(pet) {
+      const notif = document.getElementById('level-up-notif');
+      if (notif) {
+        notif.textContent = `${pet.name} leveled up to Level ${pet.level}!`;
+        notif.style.background = 'rgba(255,182,193,0.95)';
+        notif.classList.add('show');
+        setTimeout(() => {
+          notif.classList.remove('show');
+          notif.style.background = 'rgba(139,92,246,0.95)';
+        }, 2500);
+      }
+      
+      // Update pet display
+      if (window.updatePetDisplay) {
+        updatePetDisplay();
+      }
+    };
+    
+    // Pet evolution notification
+    window.onPetEvolution = function(pet, evolvedSpecies) {
+      const notif = document.getElementById('level-up-notif');
+      if (notif) {
+        notif.textContent = `${pet.name} evolved into ${evolvedSpecies}!`;
+        notif.style.background = 'rgba(255,215,0,0.95)';
+        notif.classList.add('show');
+        setTimeout(() => {
+          notif.classList.remove('show');
+          notif.style.background = 'rgba(139,92,246,0.95)';
+        }, 3000);
+      }
+      
+      // Update pet display
+      if (window.updatePetDisplay) {
+        updatePetDisplay();
+      }
+      
+      // Update pets UI
+      if (window.updatePetsUI) {
+        updatePetsUI();
+      }
+    };
+    
+    // Pet action functions
+    window.healPet = function(petId) {
+      const petSys = window.petSystem;
+      if (petSys && petSys.healPet(petId)) {
+        if (window.updatePetsUI) updatePetsUI();
+        if (window.updatePetDisplay) updatePetDisplay();
+      }
+    };
+    
+    window.revivePet = function(petId) {
+      const petSys = window.petSystem;
+      if (petSys && petSys.petRevive(petId)) {
+        if (window.updatePetsUI) updatePetsUI();
+        if (window.updatePetDisplay) updatePetDisplay();
+      }
+    };
+    
+    window.releasePet = function(petId) {
+      const petSys = window.petSystem;
+      const pet = petSys ? petSys.pets.find(p => p.id === petId) : null;
+      if (pet && confirm(`Release ${pet.name}? You can catch it again later.`)) {
+        if (petSys && petSys.petRelease(petId)) {
+          if (window.updatePetsUI) updatePetsUI();
+          if (window.updatePetDisplay) updatePetDisplay();
+        }
+      }
+    };
+    
+    window.setPetAddon = function(petId, addon) {
+      const petSys = window.petSystem;
+      if (petSys && petSys.setPetAddon(petId, addon || null)) {
+        if (window.updatePetsUI) updatePetsUI();
+        if (window.updatePetDisplay) updatePetDisplay();
+      }
+    };
+    
+    // Pet Skills UI
+    window.showPetSkills = function(petId) {
+      const petSys = window.petSystem;
+      const pet = petSys.pets.find(p => p.id === petId);
+      if (!pet) return;
+      
+      const skillSet = petSys.getPetSkillSet(pet.species);
+      const availableSkills = petSys.getAvailableSkills(pet);
+      const skillsData = window.PET_SKILLS ? window.PET_SKILLS.skills : {};
+      
+      const content = document.getElementById('pet-skills-content');
+      content.innerHTML = `
+        <div style="margin-bottom: 12px;">
+          <div style="color: #fff; font-size: 14px; margin-bottom: 4px;">${pet.name} - Level ${pet.level}/105</div>
+          <div style="color: #ffd700; font-size: 12px;">Free Skill Points: ${pet.skillPoints || 0}</div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="color: #b8e0ff; font-size: 13px; margin-bottom: 8px; font-weight: 600;">Current Skill Levels:</div>
+          ${availableSkills.map((skillName, index) => {
+            const skillLevel = pet.skillLevels[skillName] || 0;
+            const maxLevel = skillSet.maxLevels[index] || 0;
+            const skillInfo = skillsData[skillName] || { name: skillName };
+            return `
+              <div style="background: rgba(50,50,70,0.5); padding: 8px; margin-bottom: 6px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="color: #fff; font-size: 12px;">${skillInfo.name}</div>
+                    <div style="color: #888; font-size: 10px;">Level: ${skillLevel}/${maxLevel}</div>
+                  </div>
+                  ${pet.skillPoints > 0 && skillLevel < maxLevel ? `<button onclick="addPetSkillPoint(${pet.id}, '${skillName}')" style="background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">+1</button>` : '<span style="color: #888; font-size: 10px;">Max</span>'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        ${pet.level < 30 && skillSet.level30Skills ? '<div style="color: #888; font-size: 11px; margin-top: 8px;">More skills unlock at level 30</div>' : ''}
+        ${pet.level < 75 && skillSet.level75Skills ? '<div style="color: #888; font-size: 11px; margin-top: 4px;">More skills unlock at level 75</div>' : ''}
+      `;
+      
+      document.getElementById('pet-skills-ui').style.display = 'block';
+    };
+    
+    window.openPetSkills = function(petId) {
+      showPetSkills(petId);
+    };
+    
+    window.addPetSkillPoint = function(petId, skillName) {
+      const petSys = window.petSystem;
+      if (petSys && petSys.addSkillPoint(petId, skillName)) {
+        showPetSkills(petId);
+        if (window.updatePetsUI) updatePetsUI();
+      }
+    };
+    
+    window.togglePetExperience = function(petId) {
+      const petSys = window.petSystem;
+      if (petSys && petSys.toggleExperienceGain(petId)) {
+        if (window.updatePetsUI) updatePetsUI();
+      }
+    };
+    
+    document.getElementById('pet-skills-close').addEventListener('click', () => {
+      document.getElementById('pet-skills-ui').style.display = 'none';
+    });
+    
+    // Command system: !pettransfer
+    window.handlePetTransferCommand = function(command, args) {
+      if (command === '!pettransfer' && args.length >= 2) {
+        const petId = parseFloat(args[0]);
+        const targetPlayerId = args[1];
+        
+        if (window.petSystem && !isNaN(petId)) {
+          if (window.petSystem.transferPet(petId, targetPlayerId)) {
+            console.log(`Pet transferred to player ${targetPlayerId}`);
+            if (window.updatePetsUI) {
+              updatePetsUI();
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    
+    // Initialize combat after a delay to ensure Three.js is loaded
+    setTimeout(() => {
+      initializeCombat();
+      updateQuestLog();
+      // Update quest markers when quest log updates
+      setTimeout(() => {
+        if (window.updateQuestMarkers) {
+          updateQuestMarkers();
+        }
+      }, 100);
+    }, 1000);
+
+    // Tool Belt Minimize/Expand
+    const toolbelt = document.getElementById('toolbelt');
+    const toolbeltToggle = document.getElementById('toolbelt-toggle');
+    const toolbeltHeader = document.getElementById('toolbelt-header');
+    
+    function loadToolbeltState() {
+      try {
+        const minimized = localStorage.getItem('toolbeltMinimized') === 'true';
+        if (minimized) {
+          toolbelt.classList.add('minimized');
+          toolbeltToggle.textContent = '+';
+        }
+      } catch (_) {}
+    }
+    
+    function toggleToolbelt() {
+      const isMinimized = toolbelt.classList.toggle('minimized');
+      toolbeltToggle.textContent = isMinimized ? '+' : '−';
+      try {
+        localStorage.setItem('toolbeltMinimized', isMinimized.toString());
+      } catch (_) {}
+    }
+    
+    toolbeltToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleToolbelt();
+    });
+    
+    toolbeltHeader.addEventListener('click', (e) => {
+      if (e.target !== toolbeltToggle) {
+        toggleToolbelt();
+      }
+    });
+    
+    loadToolbeltState();
+
+    // Initialize starter weapons
+    if (toolBelt.inventory.length === 0) {
+      const starterWeapon = getWeapon(1);
+      if (starterWeapon) {
+        toolBelt.addItem(starterWeapon);
+        toolBelt.equipItem(starterWeapon, 'weapon');
+      }
+      toolBelt.addItem({ name: 'Health Potion', type: 'consumable', heal: 50 });
+      toolBelt.addItem({ name: 'Basic Helmet', type: 'armor', defense: 5 });
+      toolBelt.save();
+      updateToolBelt();
+    }
+
+    // Pet Management UI
+    function updatePetsUI() {
+      const petsGoldDisplay = document.getElementById('pets-gold-display');
+      const petsShopList = document.getElementById('pets-shop-list');
+      const petsList = document.getElementById('pets-list');
+      const shopSystem = window.shop || window.goldSystem;
+      const petSys = window.petSystem;
+      
+      if (!petSys) return;
+      
+      // Update gold display
+      if (petsGoldDisplay && shopSystem) {
+        petsGoldDisplay.textContent = shopSystem.gold || 0;
+      }
+      
+      // Update shop list (available pets to buy)
+      if (petsShopList) {
+        petsShopList.innerHTML = '';
+        const petSpecies = window.PET_SPECIES || {};
+        Object.entries(petSpecies).forEach(([species, data]) => {
+          // Skip evolved forms in shop
+          if (data.basePrice === 0) return;
+          
+          const playerLevel = window.toolBelt ? window.toolBelt.getPlayerLevel() : 1;
+          const meetsReq = !data.requirements || !data.requirements.minLevel || playerLevel >= data.requirements.minLevel;
+          
+          const div = document.createElement('div');
+          div.style.cssText = 'background: rgba(50,50,70,0.5); padding: 10px; margin-bottom: 6px; border-radius: 6px; border: 1px solid rgba(255,182,193,0.3);';
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="color: #ffb6c1; font-weight: 600; font-size: 12px;">${species}</div>
+                <div style="color: #888; font-size: 10px;">Price: ${data.basePrice} gold${data.requirements && data.requirements.minLevel ? ` · Level ${data.requirements.minLevel} required` : ''}</div>
+                ${data.evolution ? `<div style="color: #ffd700; font-size: 9px;">Evolves to ${data.evolution.evolvesTo} at Lv${data.evolution.level}</div>` : ''}
+              </div>
+              <button onclick="buyPetFromShop('${species}')" ${!meetsReq ? 'disabled' : ''} style="background: rgba(255,182,193,0.3); border: 1px solid rgba(255,182,193,0.5); color: #ffb6c1; padding: 6px 12px; border-radius: 4px; cursor: ${meetsReq ? 'pointer' : 'not-allowed'}; font-size: 11px; opacity: ${meetsReq ? '1' : '0.5'};">Buy</button>
+            </div>
+          `;
+          petsShopList.appendChild(div);
+        });
+      }
+      
+      // Update pets list (owned pets)
+      if (petsList) {
+        petsList.innerHTML = '';
+        const allPets = petSys.getAllPets();
+        const activePet = petSys.getActivePet();
+        
+        if (allPets.length === 0) {
+          petsList.innerHTML = '<div style="color: #888; font-size: 12px; padding: 8px; text-align: center;">No pets owned</div>';
+        } else {
+          allPets.forEach(pet => {
+            const petSpecies = window.PET_SPECIES || {};
+            const petData = petSpecies[pet.species] || {};
+            const isActive = activePet && activePet.id === pet.id;
+            const div = document.createElement('div');
+            div.style.cssText = `background: ${isActive ? 'rgba(255,182,193,0.2)' : 'rgba(50,50,70,0.5)'}; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid ${isActive ? 'rgba(255,182,193,0.5)' : 'rgba(255,182,193,0.3)'};`;
+            
+            const hungerPct = pet.hunger || 0;
+            const happinessPct = pet.happiness || 0;
+            const healthPct = pet.maxHealth > 0 ? (pet.health / pet.maxHealth) * 100 : 0;
+            const xpPct = pet.experienceToNext > 0 ? (pet.experience / pet.experienceToNext) * 100 : 0;
+            
+            div.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div>
+                  <div style="color: #ffb6c1; font-weight: 600; font-size: 13px;">${pet.name} ${isActive ? '⭐' : ''}</div>
+                  <div style="color: #888; font-size: 11px;">${pet.species} · Level ${pet.level}${petData.evolution && pet.level >= petData.evolution.level ? ' · Can Evolve!' : ''}</div>
+                </div>
+                ${isActive ? '<button onclick="removeActivePet()" style="background: rgba(255,100,80,0.3); border: 1px solid rgba(255,100,80,0.5); color: #ff6444; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Dismiss</button>' : '<button onclick="setActivePet(' + pet.id + ')" style="background: rgba(255,182,193,0.3); border: 1px solid rgba(255,182,193,0.5); color: #ffb6c1; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Summon</button>'}
+              </div>
+              <div style="margin-bottom: 4px;">
+                <div style="color: #888; font-size: 10px; margin-bottom: 2px;">XP: ${pet.experience}/${pet.experienceToNext} (${xpPct.toFixed(0)}%)</div>
+                <div style="background: rgba(0,0,0,0.3); height: 4px; border-radius: 2px; overflow: hidden;">
+                  <div style="background: linear-gradient(90deg, #ffb6c1, #ff69b4); height: 100%; width: ${xpPct}%; transition: width 0.3s;"></div>
+                </div>
+              </div>
+              <div style="margin-bottom: 4px;">
+                <div style="color: #888; font-size: 10px; margin-bottom: 2px;">Health: ${Math.floor(pet.health)}/${pet.maxHealth}</div>
+                <div style="background: rgba(0,0,0,0.3); height: 4px; border-radius: 2px; overflow: hidden;">
+                  <div style="background: linear-gradient(90deg, #ff4444, #ff6666); height: 100%; width: ${healthPct}%; transition: width 0.3s;"></div>
+                </div>
+              </div>
+              <div style="margin-bottom: 4px;">
+                <div style="color: #888; font-size: 10px; margin-bottom: 2px;">Hunger: ${Math.floor(hungerPct)}%</div>
+                <div style="background: rgba(0,0,0,0.3); height: 4px; border-radius: 2px; overflow: hidden;">
+                  <div style="background: linear-gradient(90deg, #8b4513, #daa520); height: 100%; width: ${hungerPct}%; transition: width 0.3s;"></div>
+                </div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <div style="color: #888; font-size: 10px; margin-bottom: 2px;">Happiness: ${Math.floor(happinessPct)}%</div>
+                <div style="background: rgba(0,0,0,0.3); height: 4px; border-radius: 2px; overflow: hidden;">
+                  <div style="background: linear-gradient(90deg, #ffd700, #ffaa00); height: 100%; width: ${happinessPct}%; transition: width 0.3s;"></div>
+                </div>
+              </div>
+              <div style="margin-bottom: 6px;">
+                <div style="color: #ffb6c1; font-size: 11px; margin-bottom: 4px;">Skill Points: ${pet.skillPoints || 0}</div>
+                ${pet.skillPoints > 0 ? '<button onclick="openPetSkills(' + pet.id + ')" style="width: 100%; background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-bottom: 4px;">⚔️ Allocate Skill Points</button>' : ''}
+                <button onclick="showPetSkills(' + pet.id + ')" style="width: 100%; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-bottom: 4px;">📊 View Skills</button>
+                <button onclick="togglePetExperience(' + pet.id + ')" style="width: 100%; background: rgba(139,92,246,0.3); border: 1px solid rgba(139,92,246,0.5); color: #8b5cf6; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-bottom: 4px;">${pet.experienceGainEnabled ? '⏸️ Disable XP Gain' : '▶️ Enable XP Gain'}</button>
+              </div>
+              <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                <button onclick="feedPet(${pet.id})" style="flex: 1; background: rgba(255,182,193,0.3); border: 1px solid rgba(255,182,193,0.5); color: #ffb6c1; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">🍖 Feed</button>
+                <button onclick="healPet(${pet.id})" style="flex: 1; background: rgba(0,255,136,0.3); border: 1px solid rgba(0,255,136,0.5); color: #00ff88; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">💚 Heal</button>
+              </div>
+              <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                <button onclick="renamePetPrompt(${pet.id})" style="flex: 1; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">✏️ Rename</button>
+                ${pet.status === 'dead' ? '<button onclick="revivePet(' + pet.id + ')" style="flex: 1; background: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.5); color: #ffd700; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">⚡ Revive</button>' : '<button onclick="releasePet(' + pet.id + ')" style="flex: 1; background: rgba(255,140,0,0.3); border: 1px solid rgba(255,140,0,0.5); color: #ff8c00; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">🔓 Release</button>'}
+              </div>
+              <div style="display: flex; gap: 4px;">
+                ${petData.addons && petData.addons.length > 0 ? '<select onchange="setPetAddon(' + pet.id + ', this.value)" style="flex: 1; background: rgba(50,50,70,0.8); border: 1px solid rgba(255,182,193,0.3); color: #fff; padding: 6px; border-radius: 4px; font-size: 10px;"><option value="">No Addon</option>' + petData.addons.map(addon => '<option value="' + addon + '" ' + (pet.currentAddon === addon ? 'selected' : '') + '>' + addon.charAt(0).toUpperCase() + addon.slice(1) + '</option>').join('') + '</select>' : ''}
+                <button onclick="deletePet(${pet.id})" style="background: rgba(255,100,80,0.3); border: 1px solid rgba(255,100,80,0.5); color: #ff6444; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px;">🗑️</button>
+              </div>
+              ${pet.status === 'dead' ? '<div style="color: #ff4444; font-size: 11px; margin-top: 4px; text-align: center;">💀 DEAD - Revive to use</div>' : ''}
+              ${pet.status === 'released' ? '<div style="color: #ff8c00; font-size: 11px; margin-top: 4px; text-align: center;">🔓 RELEASED</div>' : ''}
+            `;
+            petsList.appendChild(div);
+          });
+        }
+      }
+    }
+    
+    window.updatePetsUI = updatePetsUI;
+    
+    // Pet UI helper functions
+    window.buyPetFromShop = function(species) {
+      const petSys = window.petSystem;
+      const name = prompt(`Enter a name for your ${species}:`, `${species} #${petSys.getAllPets().length + 1}`);
+      if (name && name.trim()) {
+        const pet = petSys.buyPet(species, name.trim());
+        if (pet) {
+          updatePetsUI();
+          updateShopUI();
+          if (window.updatePetDisplay) {
+            updatePetDisplay();
+          }
+          alert(`Successfully purchased ${pet.name}!`);
+        } else {
+          alert('Failed to purchase pet. Check if you have enough gold.');
+        }
+      }
+    };
+    
+    window.setActivePet = function(petId) {
+      const petSys = window.petSystem;
+      if (petSys.setActivePet(petId)) {
+        updatePetsUI();
+        if (window.updatePetDisplay) {
+          updatePetDisplay();
+        }
+      }
+    };
+    
+    window.removeActivePet = function() {
+      const petSys = window.petSystem;
+      petSys.removeActivePet();
+      updatePetsUI();
+      if (window.updatePetDisplay) {
+        updatePetDisplay();
+      }
+    };
+    
+    window.feedPet = function(petId) {
+      const petSys = window.petSystem;
+      const pet = petSys.pets.find(p => p.id === petId);
+      if (pet) {
+        if (petSys.feedPet(pet)) {
+          updatePetsUI();
+        }
+      }
+    };
+    
+    window.renamePetPrompt = function(petId) {
+      const petSys = window.petSystem;
+      const pet = petSys.pets.find(p => p.id === petId);
+      if (pet) {
+        const newName = prompt(`Enter new name for ${pet.name}:`, pet.name);
+        if (newName && newName.trim() && petSys.renamePet(petId, newName.trim())) {
+          updatePetsUI();
+        }
+      }
+    };
+    
+    window.deletePet = function(petId) {
+      const petSys = window.petSystem;
+      const pet = petSys.pets.find(p => p.id === petId);
+      if (pet && confirm(`Are you sure you want to delete ${pet.name}? This cannot be undone.`)) {
+        if (petSys.deletePet(petId)) {
+          updatePetsUI();
+          if (window.updatePetDisplay) {
+            updatePetDisplay();
+          }
+        }
+      }
+    };
+    
+    // Pet UI button handlers
+    document.getElementById('pets-btn').addEventListener('click', () => {
+      const petsUI = document.getElementById('pets-ui');
+      petsUI.style.display = petsUI.style.display === 'none' ? 'block' : 'none';
+      updatePetsUI();
+    });
+    
+    document.getElementById('pets-close').addEventListener('click', () => {
+      document.getElementById('pets-ui').style.display = 'none';
+    });
+
+  </script>
+</body>
+</html>

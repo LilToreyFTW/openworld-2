@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haveila — Lava Space Planet</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0508; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #container {
+      width: 100%;
+      max-width: 2560px;
+      height: 100%;
+      max-height: 1080px;
+      position: relative;
+      border: 2px solid rgba(255,80,40,0.4);
+      box-shadow: inset 0 0 80px rgba(255,60,0,0.2), 0 0 60px rgba(200,50,0,0.3);
+    }
+    #lava-world {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #ui {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+    #ui > * { pointer-events: auto; }
+    #title {
+      background: rgba(0,0,0,0.75);
+      color: #ff6b35;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      border: 1px solid rgba(255,80,40,0.5);
+    }
+    #sound {
+      background: rgba(0,0,0,0.75);
+      color: #ffaa80;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      border: 1px solid rgba(255,80,40,0.5);
+      cursor: pointer;
+    }
+    #sound:hover { background: rgba(40,20,10,0.9); }
+    #beat-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      height: 4px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #beat-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff3300, #ff6600);
+      width: 0%;
+      transition: width 0.05s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="lava-world" width="2560" height="1080"></canvas>
+    <div id="ui">
+      <div id="title">Haveila — Lava Space Planet</div>
+      <button id="sound">▶ Play main soundtrack</button>
+    </div>
+    <div id="beat-bar"><div id="beat-fill"></div></div>
+  </div>
+  <audio id="main-soundtrack" loop>
+    <source src="game-soundtrack/Haveila(dreadnaught spacemap animated).mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const SOUNDTRACK_PATH = 'game-soundtrack/Haveila(dreadnaught spacemap animated).mp3';
+    const W = 2560;
+    const H = 1080;
+
+    const canvas = document.getElementById('lava-world');
+    const ctx = canvas.getContext('2d');
+    const audio = document.getElementById('main-soundtrack');
+    const beatFill = document.getElementById('beat-fill');
+    const soundBtn = document.getElementById('sound');
+
+    let audioCtx = null;
+    let analyser = null;
+    let dataArray = null;
+    let beat = 0;
+    let smoothBeat = 0;
+    let time = 0;
+
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaElementSource(audio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    function getBeat() {
+      if (!analyser || !dataArray) return 0;
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      return sum / dataArray.length / 255;
+    }
+
+    function drawLavaFloor() {
+      const t = time * 0.001;
+      const b = smoothBeat;
+      const flow = t * (0.4 + b * 0.6);
+      const w = canvas.width;
+      const h = canvas.height;
+
+      const grad = ctx.createLinearGradient(flow % (w * 2) - w, 0, (flow % (w * 2)) + w * 0.5, h);
+      grad.addColorStop(0, '#1a0525');
+      grad.addColorStop(0.15, '#8b1520');
+      grad.addColorStop(0.35, '#ff3300');
+      grad.addColorStop(0.5, '#0d0825');
+      grad.addColorStop(0.65, '#ff6600');
+      grad.addColorStop(0.8, '#2d0a35');
+      grad.addColorStop(1, '#ff4400');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawBleedingGradient() {
+      const t = time * 0.001;
+      const b = smoothBeat;
+      const pulse = 1 + b * 0.35;
+      const w = canvas.width;
+      const h = canvas.height;
+      const dy = (t * 80 + b * 40) % 200;
+
+      const g = ctx.createLinearGradient(0, -dy, 0, h + dy);
+      g.addColorStop(0, 'rgba(20,5,45,0.9)');
+      g.addColorStop(0.2, 'rgba(255,40,10,' + (0.5 * pulse) + ')');
+      g.addColorStop(0.4, 'rgba(60,15,80,0.85)');
+      g.addColorStop(0.5, 'rgba(255,70,20,' + (0.6 * pulse) + ')');
+      g.addColorStop(0.6, 'rgba(25,8,50,0.9)');
+      g.addColorStop(0.75, 'rgba(255,50,15,' + (0.5 * pulse) + ')');
+      g.addColorStop(0.9, 'rgba(80,20,60,0.8)');
+      g.addColorStop(1, 'rgba(255,30,5,' + (0.4 * pulse) + ')');
+      ctx.fillStyle = g;
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    function drawFireRipples() {
+      const t = time * 0.001;
+      const b = smoothBeat;
+      const w = canvas.width;
+      const h = canvas.height;
+      const tile = 120;
+      const ox = (t * (30 + b * 50)) % tile;
+      const oy = (t * (20 + b * 30)) % tile;
+
+      for (let y = -oy; y < h + tile; y += tile) {
+        for (let x = -ox; x < w + tile; x += tile) {
+          const g = ctx.createRadialGradient(x, y, 0, x, y, tile * 0.8);
+          g.addColorStop(0, 'rgba(255,80,30,' + (0.15 + b * 0.1) + ')');
+          g.addColorStop(0.5, 'rgba(180,20,60,0.08)');
+          g.addColorStop(1, 'rgba(30,10,50,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x - tile, y - tile, tile * 2, tile * 2);
+        }
+      }
+    }
+
+    function animate() {
+      time += 16;
+      if (audio && !audio.paused && analyser) {
+        beat = getBeat();
+        smoothBeat += (beat - smoothBeat) * 0.15;
+        beatFill.style.width = (smoothBeat * 100).toFixed(1) + '%';
+      } else {
+        smoothBeat += (0 - smoothBeat) * 0.05;
+      }
+
+      drawLavaFloor();
+      drawBleedingGradient();
+      drawFireRipples();
+
+      requestAnimationFrame(animate);
+    }
+
+    soundBtn.addEventListener('click', () => {
+      initAudio();
+      if (audio.paused) {
+        audio.play().catch(() => {});
+        soundBtn.textContent = '⏸ Pause soundtrack';
+      } else {
+        audio.pause();
+        soundBtn.textContent = '▶ Play main soundtrack';
+      }
+    });
+
+    audio.addEventListener('play', () => { soundBtn.textContent = '⏸ Pause soundtrack'; });
+    audio.addEventListener('pause', () => { soundBtn.textContent = '▶ Play main soundtrack'; });
+
+    canvas.width = W;
+    canvas.height = H;
+    initAudio();
+    animate();
+  </script>
+</body>
+</html>

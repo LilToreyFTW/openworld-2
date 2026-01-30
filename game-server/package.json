@@ -1,0 +1,14 @@
+{
+  "name": "virtualsim-one-server",
+  "version": "1.0.0",
+  "description": "Single shared world server — one server for all players (Vercel + exe)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}

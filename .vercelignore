@@ -1,0 +1,10 @@
+cpp/
+*.bat
+*.md
+!README.md
+build/
+*.exe
+.vscode/
+.idea/
+default_player/
+agent-transcripts/

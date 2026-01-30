@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+cpp/build/
+*.exe
+*.obj
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Logs
+*.log
+
+# Unreal / large assets (not needed for web game)
+default_player/
+
+# Agent transcripts
+agent-transcripts/

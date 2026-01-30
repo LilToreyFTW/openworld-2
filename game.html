@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Sim — Main Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: #0d0d14; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+
+    .view { display: none; width: 100%; max-width: 640px; text-align: center; }
+    .view.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .sub { font-size: 14px; opacity: 0.8; margin-bottom: 32px; }
+
+    .menu-list { list-style: none; }
+    .menu-list li { margin-bottom: 12px; }
+    .menu-list a, .menu-list button {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      background: rgba(30,30,50,0.9);
+      border: 1px solid rgba(100,120,200,0.4);
+      border-radius: 12px;
+      color: #b8e0ff;
+      font-size: 16px;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .menu-list a:hover, .menu-list button:hover {
+      background: rgba(50,50,90,0.95);
+      border-color: rgba(100,180,255,0.6);
+      color: #fff;
+    }
+    .menu-list .secondary { font-size: 13px; opacity: 0.9; }
+
+    .form-group { margin-bottom: 20px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.9; }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(20,20,40,0.95);
+      border: 1px solid rgba(100,120,200,0.4);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+    }
+    .form-group input:focus { outline: none; border-color: #06b6d4; }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+
+    .mission-card {
+      background: rgba(20,20,45,0.95);
+      border: 1px solid rgba(255,100,80,0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .mission-card h2 { color: #ff6b4a; font-size: 20px; margin-bottom: 12px; }
+    .mission-card p { font-size: 14px; line-height: 1.6; opacity: 0.9; margin-bottom: 8px; }
+    .mission-card .objective { color: #b8e0ff; font-size: 13px; margin-top: 12px; }
+
+    /* Character Creation Styles */
+    .char-preview {
+      width: 200px;
+      height: 300px;
+      margin: 20px auto;
+      background: rgba(20,20,40,0.95);
+      border: 2px solid rgba(100,120,200,0.4);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .char-preview canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .customization-section {
+      background: rgba(20,20,40,0.95);
+      border: 1px solid rgba(100,120,200,0.4);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .customization-section h3 {
+      color: #06b6d4;
+      font-size: 16px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .color-picker-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .color-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .color-option:hover {
+      transform: scale(1.1);
+      border-color: #06b6d4;
+    }
+    .color-option.selected {
+      border-color: #8b5cf6;
+      border-width: 3px;
+      box-shadow: 0 0 12px rgba(139,92,246,0.6);
+    }
+    .btn-secondary {
+      padding: 10px 20px;
+      background: rgba(50,50,90,0.95);
+      border: 1px solid rgba(100,120,200,0.4);
+      border-radius: 8px;
+      color: #b8e0ff;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-secondary:hover {
+      background: rgba(60,60,110,0.95);
+      border-color: rgba(100,180,255,0.6);
+    }
+    .char-creation-nav {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .char-creation-nav button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- MAIN MENU -->
+  <section id="view-menu" class="view active">
+    <h1 class="logo">Virtual Sim</h1>
+    <p class="sub">Quests · Missions · 7 Planets · Multiplayer · Zombies</p>
+    <ul class="menu-list">
+      <li><button type="button" id="btn-new-game">New Game</button></li>
+      <li><button type="button" id="btn-continue" class="secondary">Continue</button></li>
+      <li><a href="index.html" class="secondary">Doom Patrol Tower (Hub)</a></li>
+      <li><a href="haveila.html" class="secondary">Travel → Haveila</a></li>
+      <li><a href="weapon-camos.html" class="secondary">Armory — Prestige Camos</a></li>
+    </ul>
+  </section>
+
+  <!-- CHARACTER CREATION -->
+  <section id="view-create" class="view">
+    <h1 class="logo">Create Character</h1>
+    <p class="sub">Customize your character appearance</p>
+    
+    <!-- Character Preview -->
+    <div class="char-preview">
+      <canvas id="char-preview-canvas"></canvas>
+    </div>
+
+    <form id="form-create">
+      <div class="form-group">
+        <label for="character-name">Callsign / Name</label>
+        <input type="text" id="character-name" placeholder="e.g. Ghost, Raven" maxlength="24" required autocomplete="off">
+      </div>
+
+      <!-- FACE Customization -->
+      <div class="customization-section">
+        <h3>FACE</h3>
+        <div class="color-picker-group" id="face-colors">
+          <!-- Colors will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- TORSO Customization -->
+      <div class="customization-section">
+        <h3>TORSO</h3>
+        <div class="color-picker-group" id="torso-colors">
+          <!-- Colors will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- ARMS Customization -->
+      <div class="customization-section">
+        <h3>ARMS</h3>
+        <div class="color-picker-group" id="arms-colors">
+          <!-- Colors will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- LEGS Customization -->
+      <div class="customization-section">
+        <h3>LEGS</h3>
+        <div class="color-picker-group" id="legs-colors">
+          <!-- Colors will be populated by JS -->
+        </div>
+      </div>
+
+      <div class="char-creation-nav">
+        <button type="button" id="btn-back-menu" class="btn-secondary">Back</button>
+        <button type="submit" class="btn-primary">Deploy — Start Doom Patrol Mission</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- DOOM PATROL MISSION (INTRO) -->
+  <section id="view-intro" class="view">
+    <h1 class="logo">Doom Patrol Mission</h1>
+    <p class="sub">Intro — First deployment</p>
+    <div class="mission-card">
+      <h2>Briefing</h2>
+      <p>You are cleared for deployment. Your first assignment: reach the Doom Patrol Tower and link up with the gathering area. The Tower is the main hub for operations across all seven planets.</p>
+      <p>From there you can accept land and space quests, run missions, join multiplayer (TDM, Domination, CTF, Search and Destroy), survive Zombies, and unlock 50 weapons with 10 prestige camos each.</p>
+      <p class="objective">Objective: Enter the Doom Patrol Tower (Hub) and report in.</p>
+    </div>
+    <button type="button" id="btn-enter-tower" class="btn-primary">Enter Doom Patrol Tower</button>
+  </section>
+
+  <script>
+    const STORAGE_KEY = 'virtualSimGame';
+    const STORAGE_INTRO = 'virtualSimIntroDone';
+
+    // Character appearance options
+    const CHARACTER_COLORS = {
+      face: [
+        '#FFDBAC', '#F4C2A1', '#E6B89C', '#D4A574', '#C68642', // Light to tan
+        '#8B4513', '#654321', '#3D2817', '#1A0F0A', '#000000', // Brown to black
+        '#FFE4B5', '#FFD700', '#FFA500', '#FF6347', '#FF1493'  // Various skin tones
+      ],
+      torso: [
+        '#1E3A8A', '#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', // Blues
+        '#7C2D12', '#991B1B', '#DC2626', '#EF4444', '#F87171', // Reds
+        '#065F46', '#047857', '#059669', '#10B981', '#34D399', // Greens
+        '#78350F', '#92400E', '#B45309', '#D97706', '#F59E0B', // Oranges
+        '#581C87', '#6B21A8', '#7C3AED', '#8B5CF6', '#A78BFA', // Purples
+        '#1F2937', '#374151', '#4B5563', '#6B7280', '#9CA3AF'  // Grays
+      ],
+      arms: [
+        '#1E3A8A', '#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', // Blues
+        '#7C2D12', '#991B1B', '#DC2626', '#EF4444', '#F87171', // Reds
+        '#065F46', '#047857', '#059669', '#10B981', '#34D399', // Greens
+        '#78350F', '#92400E', '#B45309', '#D97706', '#F59E0B', // Oranges
+        '#581C87', '#6B21A8', '#7C3AED', '#8B5CF6', '#A78BFA', // Purples
+        '#1F2937', '#374151', '#4B5563', '#6B7280', '#9CA3AF'  // Grays
+      ],
+      legs: [
+        '#1E3A8A', '#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', // Blues
+        '#7C2D12', '#991B1B', '#DC2626', '#EF4444', '#F87171', // Reds
+        '#065F46', '#047857', '#059669', '#10B981', '#34D399', // Greens
+        '#78350F', '#92400E', '#B45309', '#D97706', '#F59E0B', // Oranges
+        '#581C87', '#6B21A8', '#7C3AED', '#8B5CF6', '#A78BFA', // Purples
+        '#1F2937', '#374151', '#4B5563', '#6B7280', '#9CA3AF'  // Grays
+      ]
+    };
+
+    // Character appearance state
+    let characterAppearance = {
+      face: CHARACTER_COLORS.face[0],
+      torso: CHARACTER_COLORS.torso[0],
+      arms: CHARACTER_COLORS.arms[0],
+      legs: CHARACTER_COLORS.legs[0]
+    };
+
+    function getState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+
+    function setState(state) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    function showView(id) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      const el = document.getElementById('view-' + id);
+      if (el) el.classList.add('active');
+      
+      // Initialize character preview when showing creation view
+      if (id === 'create') {
+        initializeCharacterCreation();
+      }
+    }
+
+    function hasSavedGame() {
+      const s = getState();
+      return s && s.characterName && s.characterName.trim().length > 0;
+    }
+
+    function hasCompletedIntro() {
+      return localStorage.getItem(STORAGE_INTRO) === '1';
+    }
+
+    // Initialize character creation UI
+    function initializeCharacterCreation() {
+      const savedState = getState();
+      if (savedState && savedState.appearance) {
+        characterAppearance = savedState.appearance;
+      }
+
+      // Create color pickers for each body part
+      ['face', 'torso', 'arms', 'legs'].forEach(part => {
+        const container = document.getElementById(`${part}-colors`);
+        container.innerHTML = '';
+        
+        CHARACTER_COLORS[part].forEach((color, idx) => {
+          const option = document.createElement('div');
+          option.className = 'color-option';
+          option.style.backgroundColor = color;
+          if (characterAppearance[part] === color) {
+            option.classList.add('selected');
+          }
+          option.addEventListener('click', () => {
+            characterAppearance[part] = color;
+            document.querySelectorAll(`#${part}-colors .color-option`).forEach(el => {
+              el.classList.remove('selected');
+            });
+            option.classList.add('selected');
+            renderCharacterPreview();
+          });
+          container.appendChild(option);
+        });
+      });
+
+      renderCharacterPreview();
+    }
+
+    // Render character preview
+    function renderCharacterPreview() {
+      const canvas = document.getElementById('char-preview-canvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      canvas.width = 200;
+      canvas.height = 300;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw character (simple isometric-style representation)
+      const centerX = canvas.width / 2;
+      const baseY = canvas.height - 40;
+
+      // Draw LEGS (bottom)
+      ctx.fillStyle = characterAppearance.legs;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 20, baseY);
+      ctx.lineTo(centerX - 15, baseY - 50);
+      ctx.lineTo(centerX - 5, baseY - 50);
+      ctx.lineTo(centerX, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 20, baseY);
+      ctx.lineTo(centerX + 15, baseY - 50);
+      ctx.lineTo(centerX + 5, baseY - 50);
+      ctx.lineTo(centerX, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw TORSO (middle)
+      ctx.fillStyle = characterAppearance.torso;
+      ctx.fillRect(centerX - 25, baseY - 50, 50, 60);
+
+      // Draw ARMS
+      ctx.fillStyle = characterAppearance.arms;
+      // Left arm
+      ctx.fillRect(centerX - 35, baseY - 45, 12, 50);
+      // Right arm
+      ctx.fillRect(centerX + 23, baseY - 45, 12, 50);
+
+      // Draw FACE (top)
+      ctx.fillStyle = characterAppearance.face;
+      ctx.beginPath();
+      ctx.arc(centerX, baseY - 60, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw eyes
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(centerX - 6, baseY - 65, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX + 6, baseY - 65, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    document.getElementById('btn-new-game').addEventListener('click', () => {
+      showView('create');
+    });
+
+    document.getElementById('btn-back-menu').addEventListener('click', () => {
+      showView('menu');
+    });
+
+    document.getElementById('btn-continue').addEventListener('click', () => {
+      if (hasCompletedIntro()) {
+        window.location.href = 'index.html';
+      } else {
+        showView('intro');
+      }
+    });
+
+    const continueBtn = document.getElementById('btn-continue');
+    if (!hasSavedGame()) continueBtn.style.display = 'none';
+    else continueBtn.style.display = 'block';
+
+    document.getElementById('form-create').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('character-name').value.trim();
+      if (!name) return;
+      
+      // Save character with appearance data
+      setState({
+        characterName: name,
+        appearance: characterAppearance,
+        createdAt: Date.now()
+      });
+      
+      showView('intro');
+    });
+
+    document.getElementById('btn-enter-tower').addEventListener('click', () => {
+      localStorage.setItem(STORAGE_INTRO, '1');
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
