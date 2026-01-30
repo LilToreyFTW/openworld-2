@@ -162,51 +162,69 @@
       flex: 1;
     }
 
-    /* Cinematic intro — space starfield + Star Wars crawl */
+    /* Cinematic intro — space starfield + Star Wars crawl (full screen, text visible) */
     #view-cinematic {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      min-width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
       background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       z-index: 1000;
+      box-sizing: border-box;
     }
     #cinematic-starfield {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      min-width: 100%;
+      min-height: 100%;
+      display: block;
       background: #000;
     }
     #cinematic-crawl-wrap {
       position: absolute;
-      inset: 0;
-      perspective: 320px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      perspective: 360px;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      overflow: hidden;
     }
     #cinematic-crawl {
-      width: 90%;
-      max-width: 42em;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: clamp(14px, 2.2vw, 22px);
-      font-weight: 600;
-      line-height: 1.8;
+      width: 85%;
+      max-width: 38em;
+      padding: 0 1em;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(18px, 4vw, 28px);
+      font-weight: 700;
+      line-height: 2;
+      letter-spacing: 0.08em;
       text-align: center;
       color: #f5e6a3;
-      text-shadow: 0 0 8px rgba(245,230,163,0.6);
-      transform: rotateX(55deg) translateY(100vh);
+      text-shadow: 0 0 12px rgba(245,230,163,0.8), 0 2px 4px rgba(0,0,0,0.8);
+      transform: rotateX(52deg) translateY(60vh);
       transform-origin: 50% 0%;
       white-space: pre-line;
       animation: crawl 120s linear forwards;
     }
     @keyframes crawl {
-      from { transform: rotateX(55deg) translateY(100vh); }
-      to { transform: rotateX(55deg) translateY(-220%); }
+      from { transform: rotateX(52deg) translateY(60vh); }
+      to { transform: rotateX(52deg) translateY(-180%); }
     }
     #cinematic-crawl.skip { animation-duration: 0.5s; }
     #cinematic-skip {
@@ -632,7 +650,12 @@
       showView('cinematic');
       const crawlEl = document.getElementById('cinematic-crawl');
       const audioEl = document.getElementById('cinematic-audio');
+      const canvas = document.getElementById('cinematic-starfield');
       if (crawlEl) crawlEl.textContent = CRAWL_SENTENCES.join('\n\n');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
       if (audioEl) {
         audioEl.currentTime = 0;
         audioEl.play().catch(() => {});
