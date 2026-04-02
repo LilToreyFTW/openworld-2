@@ -16,6 +16,8 @@ class Enemy {
     this.alive = true;
     this.lastDamageTime = 0;
     this.mesh = null;
+    this.isRival = type === 'rival';
+    this.lastKilledThisFrame = false;
   }
 
   getMaxHealth() {
@@ -89,20 +91,45 @@ class Enemy {
   }
 
   takeDamage(amount) {
-    if (this.type === 'symbiote' && typeof VenomBody !== 'undefined' && this.venomBody) {
-      if (this.venomBody.absorb_damage(amount)) {
-        this.health = 0;
-        this.alive = false;
-        return true;
-      }
-      this.health = this.venomBody.health;
-      this.lastDamageTime = Date.now();
-      return false;
+    if (this.type === 'symbiote' && this.venomBody) {
+      return this.venomBody.takeDamage(amount);
     }
     this.health = Math.max(0, this.health - amount);
     this.lastDamageTime = Date.now();
     if (this.health <= 0) {
       this.alive = false;
+      this.lastKilledThisFrame = true;
+      
+      // Trigger rival victory dialogue if this is a rival
+      if (this.isRival && window.getBattleLocationKey && window.getRivalVictoryLine) {
+        const locationKey = window.getBattleLocationKey(
+          window.playerInsideBuilding,
+          window.hubInteriorLevel,
+          window.isHaveilaMap
+        );
+        const victoryLine = window.getRivalVictoryLine(locationKey);
+        
+        // Show rival victory toast
+        if (window.showNotification) {
+          window.showNotification('Rival Victory', victoryLine, 'success');
+        } else {
+          console.log('Rival Victory:', victoryLine);
+        }
+      }
+      
+      // Show enemy-specific death dialogue
+      if (this.type === 'tower_chief' && window.TOWER_CHIEF_DIALOGUE) {
+        const dialogue = window.TOWER_CHIEF_DIALOGUE.death;
+        if (dialogue && window.showNotification) {
+          window.showNotification('Tower Chief', dialogue, 'info');
+        }
+      } else if (this.type === 'patrol' && window.PATROL_DIALOGUE) {
+        const dialogue = window.PATROL_DIALOGUE.defeat;
+        if (dialogue && window.showNotification) {
+          window.showNotification('Patrol', dialogue, 'info');
+        }
+      }
+      
       return true; // Enemy killed
     }
     return false;
@@ -133,6 +160,19 @@ class Enemy {
   attackPlayer() {
     if (window.combatSystem) {
       window.combatSystem.enemyAttack(this);
+    }
+    
+    // Show enemy-specific dialogue on attack
+    if (this.type === 'tower_chief' && window.TOWER_CHIEF_DIALOGUE) {
+      const dialogue = window.TOWER_CHIEF_DIALOGUE.aggro;
+      if (dialogue && window.showNotification) {
+        window.showNotification('Tower Chief', dialogue, 'warning');
+      }
+    } else if (this.type === 'patrol' && window.PATROL_DIALOGUE) {
+      const dialogue = window.PATROL_DIALOGUE.combat;
+      if (dialogue && window.showNotification) {
+        window.showNotification('Patrol', dialogue, 'warning');
+      }
     }
   }
 

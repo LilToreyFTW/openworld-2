@@ -2047,6 +2047,194 @@
     createNPC(-2000, -3500, 0x7fffd4);
     createNPC(3800, 0, 0xd8bfd8);
 
+    // Add Warden NPC near Tower entrance
+    createWardenNPC(0, 250);
+    
+    // Add Tower signs in the hub
+    createTowerSigns();
+    
+    // Add rival spawn system
+    initializeRivalSystem();
+
+    // Implementation functions for new content
+    function createWardenNPC(x, y) {
+      // Create Warden NPC with special appearance
+      const wardenGeometry = new THREE.CylinderGeometry(npcRadius * 1.2, npcRadius * 1.2, 80, 8);
+      const wardenMaterial = new THREE.MeshBasicMaterial({ color: 0x4a5568 });
+      const wardenMesh = new THREE.Mesh(wardenGeometry, wardenMaterial);
+      wardenMesh.position.set(x, y, 40);
+      wardenMesh.userData.isWarden = true;
+      wardenMesh.userData.dialogue = window.WARDEN_DIALOGUE || {};
+      scene.add(wardenMesh);
+      
+      // Add Warden to NPCs array for AI
+      npcs.push({ x, y, color: 0x4a5568, mesh: wardenMesh, isWarden: true });
+      
+      // Add interaction prompt
+      const promptGeometry = new THREE.PlaneGeometry(60, 20);
+      const promptMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0
+      });
+      const promptMesh = new THREE.Mesh(promptGeometry, promptMaterial);
+      promptMesh.position.set(x, y - 40, 50);
+      promptMesh.userData.isPrompt = true;
+      promptMesh.userData.promptText = "Press E to talk to Warden";
+      scene.add(promptMesh);
+      
+      // Store for interaction checking
+      window.wardenNPC = { mesh: wardenMesh, prompt: promptMesh, x, y };
+    }
+    
+    function createTowerSigns() {
+      if (!window.TOWER_SIGNS) return;
+      
+      // Create exhibit signs
+      window.TOWER_SIGNS.exhibits.forEach((text, index) => {
+        createSign(150 + index * 100, 100, text, 0xff6b6b);
+      });
+      
+      // Create containment signs
+      window.TOWER_SIGNS.containment.forEach((text, index) => {
+        createSign(-150 - index * 100, 100, text, 0xff4444);
+      });
+      
+      // Create reception signs
+      window.TOWER_SIGNS.reception.forEach((text, index) => {
+        createSign(0, -150 + index * 30, text, 0x4169e1);
+      });
+      
+      // Add Codex/Haveila lore displays
+      if (window.TOWER_HAVEILA_STORY) {
+        createLoreDisplay(-200, 200, window.TOWER_HAVEILA_STORY.early_draft);
+        createLoreDisplay(200, 200, window.TOWER_HAVEILA_STORY.codex_entry);
+      }
+    }
+    
+    function createSign(x, y, text, color) {
+      const signGeometry = new THREE.PlaneGeometry(80, 40);
+      const signMaterial = new THREE.MeshBasicMaterial({ color });
+      const signMesh = new THREE.Mesh(signGeometry, signMaterial);
+      signMesh.position.set(x, y, 30);
+      signMesh.userData.isSign = true;
+      scene.add(signMesh);
+      
+      // Add text label (simplified - would need TextGeometry for proper text)
+      const textGeometry = new THREE.PlaneGeometry(70, 30);
+      const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+      textMesh.position.set(x, y, 31);
+      textMesh.userData.isSignText = true;
+      scene.add(textMesh);
+    }
+    
+    function createLoreDisplay(x, y, loreText) {
+      const displayGeometry = new THREE.BoxGeometry(60, 80, 5);
+      const displayMaterial = new THREE.MeshBasicMaterial({ color: 0x2c3e50 });
+      const displayMesh = new THREE.Mesh(displayGeometry, displayMaterial);
+      displayMesh.position.set(x, y, 40);
+      displayMesh.userData.isLoreDisplay = true;
+      displayMesh.userData.loreText = loreText;
+      scene.add(displayMesh);
+    }
+    
+    function initializeRivalSystem() {
+      // Rival spawn locations
+      window.rivalSpawnLocations = [
+        { x: 300, y: 300, location: 'city_streets' },
+        { x: -300, y: -300, location: 'city_streets' },
+        { x: 500, y: 0, location: 'city_streets' },
+        { x: 0, y: 500, location: 'city_streets' }
+      ];
+      
+      // Tower enemy spawn locations (inside Tower)
+      window.towerEnemyLocations = [
+        { x: 0, y: 100, location: 'tower_reception', type: 'patrol' },
+        { x: 50, y: 100, location: 'tower_reception', type: 'patrol' },
+        { x: -50, y: 100, location: 'tower_reception', type: 'patrol' },
+        { x: 0, y: 200, location: 'tower_upper_levels', type: 'tower_chief' },
+        { x: 30, y: 250, location: 'tower_upper_levels', type: 'patrol' },
+        { x: -30, y: 250, location: 'tower_upper_levels', type: 'patrol' }
+      ];
+      
+      // Spawn rival at random location
+      spawnRival();
+      
+      // Spawn Tower enemies when inside Tower
+      if (window.playerInsideBuilding) {
+        const building = window.buildingData && window.buildingData.get(window.playerInsideBuilding);
+        if (building && building.isHubTower) {
+          spawnTowerEnemies();
+        }
+      }
+      
+      // Set up rival respawn timer
+      setInterval(() => {
+        if (!window.rivalEnemy || !window.rivalEnemy.alive) {
+          spawnRival();
+        }
+      }, 30000); // Respawn every 30 seconds
+      
+      // Set up Tower enemy respawn timer
+      setInterval(() => {
+        if (window.playerInsideBuilding) {
+          const building = window.buildingData && window.buildingData.get(window.playerInsideBuilding);
+          if (building && building.isHubTower) {
+            const towerEnemies = (window.combatSystem && window.combatSystem.enemies) || [];
+            const aliveTowerEnemies = towerEnemies.filter(e => 
+              (e.type === 'tower_chief' || e.type === 'patrol') && e.alive
+            );
+            if (aliveTowerEnemies.length < 3) {
+              spawnTowerEnemies();
+            }
+          }
+        }
+      }, 20000); // Respawn Tower enemies every 20 seconds
+    }
+    
+    function spawnRival() {
+      if (!window.rivalSpawnLocations || window.rivalSpawnLocations.length === 0) return;
+      
+      const spawnLocation = window.rivalSpawnLocations[Math.floor(Math.random() * window.rivalSpawnLocations.length)];
+      
+      // Create rival enemy
+      if (window.combatSystem) {
+        window.rivalEnemy = new Enemy(spawnLocation.x, spawnLocation.y, 'rival');
+        window.rivalEnemy.spawnLocation = spawnLocation.location;
+        window.combatSystem.enemies.push(window.rivalEnemy);
+        
+        // Show rival spawn notification
+        if (window.showNotification) {
+          window.showNotification('Rival Appeared', 'Your rival has appeared nearby!', 'warning');
+        }
+      }
+    }
+    
+    function spawnTowerEnemies() {
+      if (!window.towerEnemyLocations || window.towerEnemyLocations.length === 0) return;
+      
+      // Spawn 2-3 random Tower enemies
+      const numToSpawn = Math.floor(Math.random() * 2) + 2;
+      const shuffledLocations = [...window.towerEnemyLocations].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < numToSpawn && i < shuffledLocations.length; i++) {
+        const spawnLocation = shuffledLocations[i];
+        
+        if (window.combatSystem) {
+          const enemy = new Enemy(spawnLocation.x, spawnLocation.y, spawnLocation.type);
+          enemy.spawnLocation = spawnLocation.location;
+          window.combatSystem.enemies.push(enemy);
+          
+          // Show Tower enemy spawn notification
+          if (window.showNotification) {
+            const enemyName = spawnLocation.type === 'tower_chief' ? 'Tower Chief' : 'Patrol';
+            window.showNotification('Tower Security', `${enemyName} spotted in the Tower!`, 'warning');
+          }
+        }
+      }
+    }
+
     // Game AI (Buckland Ch2 state machines + Ch3 steering): agents for hangout NPCs
     const npcMargin = 400;
     const npcWorldBounds = {
@@ -4506,7 +4694,20 @@
         e.preventDefault();
         if (!eKeyPressed) {
           eKeyPressed = true;
-          // Check if near NPC
+          
+          // Check if near Warden NPC
+          if (window.wardenNPC) {
+            const dist = Math.hypot(
+              window.wardenNPC.x - playerState.x, 
+              window.wardenNPC.y - playerState.y
+            );
+            if (dist < 100) {
+              showWardenDialogue();
+              return;
+            }
+          }
+          
+          // Check if near regular NPCs
           if (npcMeshes) {
             npcMeshes.forEach(({ mesh, npc }) => {
               const dist = Math.hypot(mesh.position.x - playerState.x, mesh.position.y - playerState.y);
@@ -4518,6 +4719,27 @@
         }
       }
     });
+    
+    // Warden dialogue function
+    function showWardenDialogue() {
+      const dialogue = window.WARDEN_DIALOGUE;
+      if (!dialogue) return;
+      
+      // Show dialogue toast
+      if (window.showNotification) {
+        window.showNotification('Warden', dialogue.greet, 'info');
+      }
+      
+      // Show dialogue in toast system
+      const toast = document.getElementById('dialogue-toast');
+      if (toast) {
+        toast.textContent = dialogue.greet;
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      }
+    }
     window.addEventListener('keyup', (e) => {
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
