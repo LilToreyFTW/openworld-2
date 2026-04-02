@@ -481,6 +481,12 @@
     <button id="codex-btn" style="background: rgba(0,0,0,0.7); color: #f5e6a3; border: 1px solid rgba(245,230,163,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">📖 Lore</button>
     <button id="settings-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">⚙️ Settings</button>
     <button id="music-btn" style="background: rgba(0,0,0,0.7); color: #b8e0ff; border: 1px solid rgba(100,180,255,0.3); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">▶ Main soundtrack</button>
+    <!-- Enhanced System Buttons -->
+    <button id="missions-btn" style="background: rgba(139,69,19,0.7); color: #ffd700; border: 1px solid rgba(255,215,0,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🗺️ Missions</button>
+    <button id="leveling-btn" style="background: rgba(138,43,226,0.7); color: #e6b3ff; border: 1px solid rgba(230,179,255,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">⬆️ Leveling</button>
+    <button id="graphics-btn" style="background: rgba(0,128,128,0.7); color: #40e0d0; border: 1px solid rgba(64,224,208,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🎨 Graphics</button>
+    <button id="houses-btn" style="background: rgba(139,90,43,0.7); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🏠 Houses</button>
+    <button id="enhanced-map-btn" style="background: rgba(0,100,0,0.7); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🗺️ Maps</button>
   </div>
   
   <!-- Quest Log UI -->
@@ -587,6 +593,216 @@
     <div id="npc-options"></div>
     <button id="npc-close" style="margin-top: 12px; background: rgba(100,180,255,0.3); border: 1px solid rgba(100,180,255,0.5); color: #b8e0ff; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close</button>
   </div>
+  
+  <!-- Enhanced Mission System UI -->
+  <div id="mission-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 380px; max-height: 85vh; background: rgba(30,20,10,0.98); border: 2px solid rgba(255,215,0,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #ffd700; font-size: 18px; font-weight: 700;">🗺️ Mission Control</h3>
+      <button id="mission-ui-close" style="background: transparent; border: none; color: #ffd700; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div id="active-missions-list"></div>
+    <div style="margin-top: 20px; border-top: 1px solid rgba(255,215,0,0.3); padding-top: 12px;">
+      <h4 style="color: #ffa500; font-size: 14px; margin-bottom: 8px;">Available Missions</h4>
+      <div id="available-missions-list"></div>
+    </div>
+  </div>
+  
+  <!-- Enhanced Leveling UI -->
+  <div id="leveling-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 400px; max-height: 85vh; background: rgba(40,20,60,0.98); border: 2px solid rgba(138,43,226,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #e6b3ff; font-size: 18px; font-weight: 700;">⬆️ Advanced Leveling</h3>
+      <button id="leveling-ui-close" style="background: transparent; border: none; color: #e6b3ff; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div style="background: rgba(138,43,226,0.2); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(138,43,226,0.4);">
+      <div style="font-size: 12px; color: #e6b3ff; margin-bottom: 4px;">Player Level</div>
+      <div style="font-size: 24px; font-weight: 700; color: #fff;" id="enhanced-player-level">1</div>
+      <div style="font-size: 10px; color: #ccc; margin-top: 2px;" id="enhanced-player-xp">0 / 100 XP</div>
+      <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; margin-top: 4px; overflow: hidden;">
+        <div id="enhanced-player-xp-bar" style="height: 100%; background: linear-gradient(90deg, rgba(138,43,226,0.8), rgba(75,0,130,0.8)); width: 0%; transition: width 0.3s;"></div>
+      </div>
+      <div style="margin-top: 8px; font-size: 11px; color: #ffa500;">
+        Level Points: <span id="level-up-points">0</span>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #e6b3ff; font-size: 14px; margin-bottom: 8px;">Combat Stats</h4>
+      <div id="combat-stats-list"></div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #e6b3ff; font-size: 14px; margin-bottom: 8px;">Skill Mastery</h4>
+      <div id="skill-mastery-list"></div>
+    </div>
+    <div>
+      <h4 style="color: #e6b3ff; font-size: 14px; margin-bottom: 8px;">Allocate Points</h4>
+      <div id="stat-allocation"></div>
+    </div>
+  </div>
+  
+  <!-- Advanced Graphics UI -->
+  <div id="graphics-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 360px; max-height: 85vh; background: rgba(10,40,40,0.98); border: 2px solid rgba(0,128,128,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #40e0d0; font-size: 18px; font-weight: 700;">🎨 Graphics Settings</h3>
+      <button id="graphics-ui-close" style="background: transparent; border: none; color: #40e0d0; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #40e0d0; font-size: 14px; margin-bottom: 8px;">Shader Effects</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="water-shaders" checked> Water Shaders
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="metallic-shaders" checked> Metallic Materials
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="glow-effects" checked> Glow Effects
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="terrain-shaders" checked> Terrain Shaders
+        </label>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #40e0d0; font-size: 14px; margin-bottom: 8px;">Lighting</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="color: #b8e0ff; font-size: 12px; min-width: 80px;">Ambient:</label>
+          <input type="range" id="ambient-light" min="0" max="1" step="0.1" value="0.4" style="flex: 1;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="color: #b8e0ff; font-size: 12px; min-width: 80px;">Sun Intensity:</label>
+          <input type="range" id="sun-intensity" min="0" max="2" step="0.1" value="1" style="flex: 1;">
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #40e0d0; font-size: 14px; margin-bottom: 8px;">Post Processing</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="bloom-effect"> Bloom Effect
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="color-correction" checked> Color Correction
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="vignette" checked> Vignette
+        </label>
+      </div>
+    </div>
+    <div>
+      <h4 style="color: #40e0d0; font-size: 14px; margin-bottom: 8px;">Performance</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="color: #b8e0ff; font-size: 12px; min-width: 80px;">Quality:</label>
+          <select id="graphics-quality" style="flex: 1; background: rgba(0,0,0,0.5); color: #b8e0ff; border: 1px solid rgba(64,224,208,0.3); padding: 4px;">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="ultra">Ultra</option>
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; color: #b8e0ff; font-size: 12px;">
+          <input type="checkbox" id="particle-effects" checked> Particle Effects
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Interactive House System UI -->
+  <div id="house-ui" style="display: none; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); width: 380px; max-height: 85vh; background: rgba(40,30,20,0.98); border: 2px solid rgba(255,165,0,0.4); border-radius: 12px; padding: 16px; overflow-y: auto; z-index: 250; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #ffa500; font-size: 18px; font-weight: 700;">🏠 House Management</h3>
+      <button id="house-ui-close" style="background: transparent; border: none; color: #ffa500; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div id="current-house-info" style="display: none; margin-bottom: 16px;">
+      <div style="background: rgba(255,165,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,165,0,0.4);">
+        <div style="font-size: 14px; color: #ffa500; font-weight: 600;" id="current-house-name">House Name</div>
+        <div style="font-size: 11px; color: #ccc; margin-top: 4px;" id="current-house-type">House Type</div>
+        <div style="margin-top: 8px;">
+          <button id="leave-house-btn" style="background: rgba(255,100,0,0.7); color: #fff; border: 1px solid rgba(255,165,0,0.4); padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">Leave House</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #ffa500; font-size: 14px; margin-bottom: 8px;">Available Houses</h4>
+      <div id="available-houses-list"></div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h4 style="color: #ffa500; font-size: 14px; margin-bottom: 8px;">Furniture</h4>
+      <div id="furniture-list"></div>
+    </div>
+    <div>
+      <h4 style="color: #ffa500; font-size: 14px; margin-bottom: 8px;">Build New House</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <select id="house-type-select" style="background: rgba(0,0,0,0.5); color: #ffa500; border: 1px solid rgba(255,165,0,0.3); padding: 6px; border-radius: 4px;">
+          <option value="small_house">Small House (100 Gold)</option>
+          <option value="medium_house">Medium House (250 Gold)</option>
+          <option value="large_house">Large House (500 Gold)</option>
+          <option value="mansion">Mansion (1500 Gold)</option>
+        </select>
+        <button id="build-house-btn" style="background: rgba(255,165,0,0.7); color: #fff; border: 1px solid rgba(255,165,0,0.4); padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">Build House</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Enhanced Map System UI -->
+  <div id="enhanced-map-ui" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90vw; height: 90vh; max-width: 1200px; max-height: 800px; background: rgba(10,30,10,0.98); border: 2px solid rgba(144,238,144,0.4); border-radius: 12px; padding: 16px; z-index: 300; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="color: #90ee90; font-size: 18px; font-weight: 700;">🗺️ Enhanced Maps</h3>
+      <button id="enhanced-map-ui-close" style="background: transparent; border: none; color: #90ee90; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+    <div style="display: flex; gap: 16px; height: calc(100% - 40px);">
+      <div style="width: 200px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; border: 1px solid rgba(144,238,144,0.3);">
+        <h4 style="color: #90ee90; font-size: 14px; margin-bottom: 8px;">Map Selection</h4>
+        <div id="map-selection" style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="map-btn" data-map="world" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">World Map</button>
+          <button class="map-btn" data-map="doom_patrol_region" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">Doom Patrol Region</button>
+          <button class="map-btn" data-map="doom_patrol_city" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">Doom Patrol City</button>
+          <button class="map-btn" data-map="ancient_ruins" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer;">Ancient Ruins</button>
+        </div>
+        <div style="margin-top: 16px;">
+          <h4 style="color: #90ee90; font-size: 14px; margin-bottom: 8px;">Map Layers</h4>
+          <div id="map-layers" style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="terrain" checked> Terrain
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="water" checked> Water
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="roads" checked> Roads
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="buildings" checked> Buildings
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="quests" checked> Quests
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; color: #b8e0ff; font-size: 11px;">
+              <input type="checkbox" class="layer-toggle" data-layer="grid"> Grid
+            </label>
+          </div>
+        </div>
+        <div style="margin-top: 16px;">
+          <h4 style="color: #90ee90; font-size: 14px; margin-bottom: 8px;">Map Controls</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button id="center-map-btn" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">Center on Player</button>
+            <button id="toggle-minimap-btn" style="background: rgba(144,238,144,0.2); color: #90ee90; border: 1px solid rgba(144,238,144,0.4); padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">Toggle Minimap</button>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; border: 1px solid rgba(144,238,144,0.3); position: relative;">
+        <canvas id="enhanced-map-canvas" style="width: 100%; height: 100%; border-radius: 4px;"></canvas>
+        <div id="map-zoom-controls" style="position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; gap: 4px;">
+          <button id="map-zoom-in" style="background: rgba(144,238,144,0.7); color: #fff; border: 1px solid rgba(144,238,144,0.4); padding: 6px 10px; border-radius: 4px; font-size: 14px; cursor: pointer;">+</button>
+          <button id="map-zoom-out" style="background: rgba(144,238,144,0.7); color: #fff; border: 1px solid rgba(144,238,144,0.4); padding: 6px 10px; border-radius: 4px; font-size: 14px; cursor: pointer;">−</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Minimap Canvas -->
+  <canvas id="minimap-canvas" style="position: fixed; top: 10px; right: 10px; width: 200px; height: 200px; background: rgba(0,0,0,0.7); border: 2px solid rgba(144,238,144,0.4); border-radius: 8px; z-index: 150;"></canvas>
+  
   <script type="importmap">
     {
       "imports": {
@@ -594,6 +810,12 @@
       }
     }
   </script>
+  <!-- Enhanced Game Systems -->
+  <script src="mission-system.js"></script>
+  <script src="enhanced-leveling.js"></script>
+  <script src="advanced-graphics.js"></script>
+  <script src="interactive-house-system.js"></script>
+  <script src="enhanced-map-system.js"></script>
   <script type="module">
     import * as THREE from 'three';
     // Make THREE available globally for weather.js
@@ -666,14 +888,177 @@
     const buildScale = blockW / 14;
 
     const streetMeshes = [];
+    const sidewalkMeshes = [];
+    const decorationMeshes = [];
+    
+    // Enhanced street creation with sidewalks and details
     function createStreet(x, y, width, length, rotZ = 0) {
-      const g = new THREE.PlaneGeometry(width, length);
-      const m = new THREE.MeshBasicMaterial({ color: 0x3d3d5c });
-      const mesh = new THREE.Mesh(g, m);
-      mesh.position.set(x, y, 0);
-      mesh.rotation.z = rotZ;
-      scene.add(mesh);
-      streetMeshes.push({ mesh, material: m });
+      // Main street surface
+      const streetGeometry = new THREE.PlaneGeometry(width, length);
+      const streetMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x2d2d2d,
+        map: createStreetTexture()
+      });
+      const streetMesh = new THREE.Mesh(streetGeometry, streetMaterial);
+      streetMesh.position.set(x, y, 0);
+      streetMesh.rotation.z = rotZ;
+      streetMesh.userData.isStreet = true;
+      scene.add(streetMesh);
+      streetMeshes.push({ mesh: streetMesh, material: streetMaterial });
+      
+      // Street lines (center divider)
+      if (width > 6) {
+        const lineGeometry = new THREE.PlaneGeometry(0.5, length);
+        const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const lineMesh = new THREE.Mesh(lineGeometry, lineMaterial);
+        lineMesh.position.set(x, y, 0.01);
+        lineMesh.rotation.z = rotZ;
+        scene.add(lineMesh);
+        streetMeshes.push({ mesh: lineMesh, material: lineMaterial });
+      }
+      
+      // Sidewalks
+      createSidewalks(x, y, width, length, rotZ);
+      
+      // Street lights
+      createStreetLights(x, y, width, length, rotZ);
+    }
+    
+    function createSidewalks(streetX, streetY, streetWidth, streetLength, rotZ) {
+      const sidewalkWidth = 2;
+      const sidewalkColor = 0x808080;
+      
+      // Left sidewalk
+      const leftSidewalkGeom = new THREE.PlaneGeometry(sidewalkWidth, streetLength);
+      const leftSidewalkMat = new THREE.MeshBasicMaterial({ 
+        color: sidewalkColor,
+        map: createSidewalkTexture()
+      });
+      const leftSidewalk = new THREE.Mesh(leftSidewalkGeom, leftSidewalkMat);
+      
+      // Calculate sidewalk position based on street rotation
+      const offsetX = rotZ === 0 ? -(streetWidth / 2 + sidewalkWidth / 2) : 0;
+      const offsetY = rotZ === Math.PI / 2 ? -(streetWidth / 2 + sidewalkWidth / 2) : 0;
+      
+      leftSidewalk.position.set(streetX + offsetX, streetY + offsetY, 0.01);
+      leftSidewalk.rotation.z = rotZ;
+      leftSidewalk.userData.isSidewalk = true;
+      scene.add(leftSidewalk);
+      sidewalkMeshes.push({ mesh: leftSidewalk, material: leftSidewalkMat });
+      
+      // Right sidewalk
+      const rightSidewalk = new THREE.Mesh(leftSidewalkGeom, leftSidewalkMat);
+      rightSidewalk.position.set(streetX - offsetX, streetY - offsetY, 0.01);
+      rightSidewalk.rotation.z = rotZ;
+      rightSidewalk.userData.isSidewalk = true;
+      scene.add(rightSidewalk);
+      sidewalkMeshes.push({ mesh: rightSidewalk, material: leftSidewalkMat });
+    }
+    
+    function createStreetLights(streetX, streetY, streetWidth, streetLength, rotZ) {
+      const lightSpacing = 40;
+      const numLights = Math.floor(streetLength / lightSpacing);
+      
+      for (let i = 0; i < numLights; i++) {
+        const progress = (i / numLights) - 0.5;
+        const lightX = rotZ === 0 ? streetX : streetX + progress * streetLength;
+        const lightY = rotZ === 0 ? streetY + progress * streetLength : streetY;
+        
+        // Light pole
+        const poleGeometry = new THREE.CylinderGeometry(0.2, 0.2, 8);
+        const poleMaterial = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+        const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+        pole.position.set(lightX, lightY, 4);
+        pole.userData.isStreetLight = true;
+        scene.add(pole);
+        decorationMeshes.push({ mesh: pole, material: poleMaterial });
+        
+        // Light fixture
+        const lightGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const lightMaterial = new THREE.MeshBasicMaterial({ 
+          color: 0xffff00,
+          transparent: true,
+          opacity: 0.8
+        });
+        const light = new THREE.Mesh(lightGeometry, lightMaterial);
+        light.position.set(lightX, lightY, 7.5);
+        light.userData.isStreetLight = true;
+        scene.add(light);
+        decorationMeshes.push({ mesh: light, material: lightMaterial });
+      }
+    }
+    
+    // Texture creation functions
+    function createStreetTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Asphalt base
+      ctx.fillStyle = '#2d2d2d';
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add texture variation
+      for (let i = 0; i < 100; i++) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.3})`;
+        ctx.fillRect(
+          Math.random() * 256,
+          Math.random() * 256,
+          Math.random() * 20 + 5,
+          Math.random() * 20 + 5
+        );
+      }
+      
+      // Add cracks
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 20; i++) {
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * 256, Math.random() * 256);
+        ctx.lineTo(Math.random() * 256, Math.random() * 256);
+        ctx.stroke();
+      }
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    function createSidewalkTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Concrete base
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add concrete texture
+      for (let i = 0; i < 50; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.1})`;
+        ctx.fillRect(
+          Math.random() * 256,
+          Math.random() * 256,
+          Math.random() * 10 + 2,
+          Math.random() * 10 + 2
+        );
+      }
+      
+      // Add expansion joints
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 256; i += 32) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 256);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(256, i);
+        ctx.stroke();
+      }
+      
+      return new THREE.CanvasTexture(canvas);
     }
 
     // Building data for accessibility/interaction
@@ -685,97 +1070,467 @@
       const height = isHouse ? d * 0.5 : d * 0.7; // Building height
       const depth = w * 0.2; // Isometric depth
       
-      // Base/foundation (bottom face - darker)
+      // Create building group for complex geometry
+      const buildingGroup = new THREE.Group();
+      
+      // Enhanced foundation with texture
       const baseColor = new THREE.Color(color);
       baseColor.multiplyScalar(0.5);
       const baseGeom = new THREE.PlaneGeometry(w * 1.05, d * 1.05);
-      const baseMat = new THREE.MeshBasicMaterial({ color: baseColor.getHex() });
+      const baseMat = new THREE.MeshBasicMaterial({ 
+        color: baseColor.getHex(),
+        map: createFoundationTexture()
+      });
       const baseMesh = new THREE.Mesh(baseGeom, baseMat);
       baseMesh.position.set(x, y, -0.02);
-      scene.add(baseMesh);
-      buildingMeshes.push({ mesh: baseMesh, material: baseMat, isHouse, buildingId });
+      baseMesh.userData.isBuilding = true;
+      buildingGroup.add(baseMesh);
       
-      // Front face (main wall) - positioned lower to show height
+      // Main building structure with enhanced materials
+      const frontMaterial = new THREE.MeshBasicMaterial({ 
+        color,
+        map: createBuildingTexture(color)
+      });
+      
+      // Front face with architectural details
       const frontGeom = new THREE.PlaneGeometry(w, height);
-      const frontMat = new THREE.MeshBasicMaterial({ color });
-      const frontMesh = new THREE.Mesh(frontGeom, frontMat);
+      const frontMesh = new THREE.Mesh(frontGeom, frontMaterial);
       frontMesh.position.set(x, y - height/2, -0.01);
-      scene.add(frontMesh);
-      buildingMeshes.push({ mesh: frontMesh, material: frontMat, isHouse, buildingId });
+      frontMesh.userData.isBuilding = true;
+      buildingGroup.add(frontMesh);
       
-      // Left side wall (isometric depth - darker)
+      // Add windows to front face
+      if (!isHouse) {
+        addBuildingWindows(frontMesh, w, height, x, y - height/2, -0.005);
+      } else {
+        addHouseWindows(frontMesh, w, height, x, y - height/2, -0.005);
+      }
+      
+      // Add balconies for larger buildings
+      if (!isHouse && w > 150) {
+        addBalconies(buildingGroup, w, height, x, y);
+      }
+      
+      // Enhanced side walls with depth and shading
       const leftColor = new THREE.Color(color);
       leftColor.multiplyScalar(0.65);
       const leftGeom = new THREE.PlaneGeometry(depth, height);
-      const leftMat = new THREE.MeshBasicMaterial({ color: leftColor.getHex() });
+      const leftMat = new THREE.MeshBasicMaterial({ 
+        color: leftColor.getHex(),
+        map: createBuildingTexture(leftColor.getHex())
+      });
       const leftMesh = new THREE.Mesh(leftGeom, leftMat);
       leftMesh.position.set(x - w/2 - depth/2, y - height/2, -0.012);
-      leftMesh.rotation.z = Math.PI / 4; // 45 degree angle for isometric
-      scene.add(leftMesh);
-      buildingMeshes.push({ mesh: leftMesh, material: leftMat, isHouse, buildingId });
+      leftMesh.rotation.z = Math.PI / 4;
+      leftMesh.userData.isBuilding = true;
+      buildingGroup.add(leftMesh);
       
-      // Right side wall (isometric depth - slightly lighter)
       const rightColor = new THREE.Color(color);
       rightColor.multiplyScalar(0.75);
       const rightGeom = new THREE.PlaneGeometry(depth, height);
-      const rightMat = new THREE.MeshBasicMaterial({ color: rightColor.getHex() });
+      const rightMat = new THREE.MeshBasicMaterial({ 
+        color: rightColor.getHex(),
+        map: createBuildingTexture(rightColor.getHex())
+      });
       const rightMesh = new THREE.Mesh(rightGeom, rightMat);
       rightMesh.position.set(x + w/2 + depth/2, y - height/2, -0.012);
-      rightMesh.rotation.z = -Math.PI / 4; // -45 degree angle
-      scene.add(rightMesh);
-      buildingMeshes.push({ mesh: rightMesh, material: rightMat, isHouse, buildingId });
+      rightMesh.rotation.z = -Math.PI / 4;
+      rightMesh.userData.isBuilding = true;
+      buildingGroup.add(rightMesh);
       
-      // Top face (roof or flat top)
-      const topColor = isHouse ? 0x8b4513 : new THREE.Color(color).multiplyScalar(0.85).getHex();
-      const topGeom = new THREE.PlaneGeometry(w * 1.1, depth * 1.4);
-      const topMat = new THREE.MeshBasicMaterial({ color: topColor });
-      const topMesh = new THREE.Mesh(topGeom, topMat);
-      topMesh.position.set(x, y - height - depth * 0.3, -0.018);
-      topMesh.rotation.z = Math.PI / 4; // Rotated for isometric top view
-      scene.add(topMesh);
-      buildingMeshes.push({ mesh: topMesh, material: topMat, isHouse, buildingId });
+      // Enhanced roof with texture and details
+      const roofColor = isHouse ? 0x8b4513 : new THREE.Color(color).multiplyScalar(0.85).getHex();
+      const roofGeom = new THREE.PlaneGeometry(w * 1.1, depth * 1.4);
+      const roofMat = new THREE.MeshBasicMaterial({ 
+        color: roofColor,
+        map: createRoofTexture(roofColor)
+      });
+      const roofMesh = new THREE.Mesh(roofGeom, roofMat);
+      roofMesh.position.set(x, y - height - depth * 0.3, -0.018);
+      roofMesh.rotation.z = Math.PI / 4;
+      roofMesh.userData.isBuilding = true;
+      buildingGroup.add(roofMesh);
       
-      // Door/Entry point (visible marker on front face)
-      const doorSize = Math.min(w * 0.18, height * 0.35);
-      const doorGeom = new THREE.PlaneGeometry(doorSize, doorSize * 1.8);
-      const doorMat = new THREE.MeshBasicMaterial({ color: 0x654321, transparent: true, opacity: 0.95 });
-      const doorMesh = new THREE.Mesh(doorGeom, doorMat);
-      const doorX = x;
-      const doorY = y - height/2 + doorSize * 0.9; // Near bottom of front face
-      doorMesh.position.set(doorX, doorY, -0.005);
-      scene.add(doorMesh);
-      buildingMeshes.push({ mesh: doorMesh, material: doorMat, isHouse, buildingId, isDoor: true });
-      
-      // Windows (detail for city buildings)
-      if (!isHouse) {
-        const windowSize = w * 0.12;
-        const windowCount = Math.floor(w / (windowSize * 1.5));
-        for (let i = 0; i < windowCount && i < 3; i++) {
-          const windowGeom = new THREE.PlaneGeometry(windowSize, windowSize);
-          const windowMat = new THREE.MeshBasicMaterial({ color: 0x87ceeb, transparent: true, opacity: 0.7 });
-          const windowMesh = new THREE.Mesh(windowGeom, windowMat);
-          const offsetX = -w/3 + (i * w/3);
-          windowMesh.position.set(
-            x + offsetX,
-            y - height/2 + height * 0.5,
-            -0.006
-          );
-          scene.add(windowMesh);
-          buildingMeshes.push({ mesh: windowMesh, material: windowMat, isHouse, buildingId });
-        }
+      // Add roof details for houses
+      if (isHouse) {
+        addHouseRoofDetails(buildingGroup, w, x, y, height, depth);
       }
       
+      // Enhanced door with frame and details
+      const doorSize = Math.min(w * 0.18, height * 0.35);
+      const doorGroup = new THREE.Group();
+      
+      // Door frame
+      const frameGeom = new THREE.PlaneGeometry(doorSize * 1.1, doorSize * 1.9);
+      const frameMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+      const frameMesh = new THREE.Mesh(frameGeom, frameMat);
+      frameMesh.position.set(x, y - height/2 + doorSize * 0.9, -0.006);
+      doorGroup.add(frameMesh);
+      
+      // Door
+      const doorGeom = new THREE.PlaneGeometry(doorSize, doorSize * 1.8);
+      const doorMat = new THREE.MeshBasicMaterial({ 
+        color: 0x654321, 
+        transparent: true, 
+        opacity: 0.95,
+        map: createDoorTexture()
+      });
+      const doorMesh = new THREE.Mesh(doorGeom, doorMat);
+      doorMesh.position.set(x, y - height/2 + doorSize * 0.9, -0.005);
+      doorMesh.userData.isDoor = true;
+      doorGroup.add(doorMesh);
+      
+      buildingGroup.add(doorGroup);
+      
+      // Add building to scene
+      scene.add(buildingGroup);
+      
+      // Store all building meshes for interaction
+      buildingGroup.traverse(child => {
+        if (child.isMesh) {
+          buildingMeshes.push({ 
+            mesh: child, 
+            material: child.material, 
+            isHouse, 
+            buildingId,
+            buildingGroup: buildingGroup
+          });
+        }
+      });
+      
       // Store building data for interaction
+      const doorX = x;
+      const doorY = y - height/2 + doorSize * 0.9;
       buildingData.set(buildingId, {
         x, y, w, d, height, depth,
         doorX, doorY,
         accessible: true,
         isHouse,
         isHubTower: !!isHubTower,
-        color
+        color,
+        buildingGroup
       });
       
+      // Add environmental details around building
+      addBuildingEnvironment(x, y, w, d, isHouse);
+      
       return buildingId;
+    }
+    
+    // Enhanced window creation for buildings
+    function addBuildingWindows(parentMesh, buildingWidth, buildingHeight, buildingX, buildingY, zOffset) {
+      const windowSize = buildingWidth * 0.12;
+      const windowCount = Math.floor(buildingWidth / (windowSize * 1.5));
+      const floorCount = Math.floor(buildingHeight / (windowSize * 2));
+      
+      for (let floor = 0; floor < floorCount && floor < 8; floor++) {
+        for (let i = 0; i < windowCount && i < 4; i++) {
+          const windowGeom = new THREE.PlaneGeometry(windowSize, windowSize);
+          const windowMat = new THREE.MeshBasicMaterial({ 
+            color: 0x87ceeb, 
+            transparent: true, 
+            opacity: 0.7,
+            map: createWindowTexture()
+          });
+          const windowMesh = new THREE.Mesh(windowGeom, windowMat);
+          
+          const offsetX = -buildingWidth/3 + (i * buildingWidth/3);
+          const offsetY = -buildingHeight/2 + (floor * windowSize * 2) + windowSize;
+          
+          windowMesh.position.set(
+            buildingX + offsetX,
+            buildingY + offsetY,
+            zOffset
+          );
+          windowMesh.userData.isWindow = true;
+          parentMesh.parent.add(windowMesh);
+          buildingMeshes.push({ mesh: windowMesh, material: windowMat, isHouse: false });
+        }
+      }
+    }
+    
+    // House window creation
+    function addHouseWindows(parentMesh, buildingWidth, buildingHeight, buildingX, buildingY, zOffset) {
+      const windowSize = buildingWidth * 0.15;
+      
+      // Add 2-3 windows per house
+      for (let i = 0; i < 3; i++) {
+        const windowGeom = new THREE.PlaneGeometry(windowSize, windowSize);
+        const windowMat = new THREE.MeshBasicMaterial({ 
+          color: 0x87ceeb, 
+          transparent: true, 
+          opacity: 0.7,
+          map: createWindowTexture()
+        });
+        const windowMesh = new THREE.Mesh(windowGeom, windowMat);
+        
+        const offsetX = -buildingWidth/3 + (i * buildingWidth/3);
+        const offsetY = -buildingHeight/2 + buildingHeight * 0.6;
+        
+        windowMesh.position.set(
+          buildingX + offsetX,
+          buildingY + offsetY,
+          zOffset
+        );
+        windowMesh.userData.isWindow = true;
+        parentMesh.parent.add(windowMesh);
+        buildingMeshes.push({ mesh: windowMesh, material: windowMat, isHouse: true });
+      }
+    }
+    
+    // Add balconies to larger buildings
+    function addBalconies(buildingGroup, buildingWidth, buildingHeight, buildingX, buildingY) {
+      const balconyCount = Math.floor(buildingWidth / 100);
+      
+      for (let i = 0; i < balconyCount; i++) {
+        const balconyGeom = new THREE.BoxGeometry(buildingWidth * 0.8, 2, 3);
+        const balconyMat = new THREE.MeshBasicMaterial({ color: 0x8b7355 });
+        const balconyMesh = new THREE.Mesh(balconyGeom, balconyMat);
+        
+        const offsetX = (i - balconyCount/2) * (buildingWidth / balconyCount);
+        const offsetY = -buildingHeight/2 + (i + 1) * (buildingHeight / (balconyCount + 2));
+        
+        balconyMesh.position.set(
+          buildingX + offsetX,
+          buildingY + offsetY,
+          2
+        );
+        balconyMesh.userData.isBalcony = true;
+        buildingGroup.add(balconyMesh);
+        buildingMeshes.push({ mesh: balconyMesh, material: balconyMat, isHouse: false });
+        
+        // Add railing
+        const railingGeom = new THREE.BoxGeometry(buildingWidth * 0.85, 0.5, 0.2);
+        const railingMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+        const railingMesh = new THREE.Mesh(railingGeom, railingMat);
+        railingMesh.position.set(
+          buildingX + offsetX,
+          buildingY + offsetY + 1,
+          3.5
+        );
+        railingMesh.userData.isRailing = true;
+        buildingGroup.add(railingMesh);
+        buildingMeshes.push({ mesh: railingMesh, material: railingMat, isHouse: false });
+      }
+    }
+    
+    // Add house roof details
+    function addHouseRoofDetails(buildingGroup, buildingWidth, buildingX, buildingY, buildingHeight, depth) {
+      // Chimney
+      const chimneyGeom = new THREE.BoxGeometry(8, 20, 8);
+      const chimneyMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+      const chimneyMesh = new THREE.Mesh(chimneyGeom, chimneyMat);
+      chimneyMesh.position.set(
+        buildingX - buildingWidth * 0.3,
+        buildingY - buildingHeight - depth * 0.3,
+        10
+      );
+      chimneyMesh.userData.isChimney = true;
+      buildingGroup.add(chimneyMesh);
+      buildingMeshes.push({ mesh: chimneyMesh, material: chimneyMat, isHouse: true });
+      
+      // Roof vents
+      for (let i = 0; i < 2; i++) {
+        const ventGeom = new THREE.CylinderGeometry(2, 2, 3, 8);
+        const ventMat = new THREE.MeshBasicMaterial({ color: 0x696969 });
+        const ventMesh = new THREE.Mesh(ventGeom, ventMat);
+        
+        const offsetX = (i - 0.5) * buildingWidth * 0.4;
+        ventMesh.position.set(
+          buildingX + offsetX,
+          buildingY - buildingHeight - depth * 0.3,
+          5
+        );
+        ventMesh.userData.isVent = true;
+        buildingGroup.add(ventMesh);
+        buildingMeshes.push({ mesh: ventMesh, material: ventMat, isHouse: true });
+      }
+    }
+    
+    // Add environmental details around buildings
+    function addBuildingEnvironment(x, y, w, d, isHouse) {
+      // Add trees around houses
+      if (isHouse) {
+        const treePositions = [
+          { x: x - w/2 - 10, y: y },
+          { x: x + w/2 + 10, y: y },
+          { x: x, y: y - d/2 - 10 }
+        ];
+        
+        treePositions.forEach(pos => {
+          createTree(pos.x, pos.y);
+        });
+      }
+      
+      // Add trash cans and mailboxes for city buildings
+      if (!isHouse) {
+        createMailbox(x + w/2 + 5, y);
+        createTrashCan(x - w/2 - 5, y);
+      }
+    }
+    
+    // Create tree
+    function createTree(x, y) {
+      // Tree trunk
+      const trunkGeom = new THREE.CylinderGeometry(2, 3, 12, 8);
+      const trunkMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+      const trunk = new THREE.Mesh(trunkGeom, trunkMat);
+      trunk.position.set(x, y, 6);
+      trunk.userData.isTree = true;
+      scene.add(trunk);
+      decorationMeshes.push({ mesh: trunk, material: trunkMat });
+      
+      // Tree foliage
+      const foliageGeom = new THREE.SphereGeometry(8, 8, 8);
+      const foliageMat = new THREE.MeshBasicMaterial({ color: 0x228b22 });
+      const foliage = new THREE.Mesh(foliageGeom, foliageMat);
+      foliage.position.set(x, y, 15);
+      foliage.userData.isTree = true;
+      scene.add(foliage);
+      decorationMeshes.push({ mesh: foliage, material: foliageMat });
+    }
+    
+    // Create mailbox
+    function createMailbox(x, y) {
+      const mailboxGeom = new THREE.BoxGeometry(3, 4, 3);
+      const mailboxMat = new THREE.MeshBasicMaterial({ color: 0x4169e1 });
+      const mailbox = new THREE.Mesh(mailboxGeom, mailboxMat);
+      mailbox.position.set(x, y, 2);
+      mailbox.userData.isMailbox = true;
+      scene.add(mailbox);
+      decorationMeshes.push({ mesh: mailbox, material: mailboxMat });
+    }
+    
+    // Create trash can
+    function createTrashCan(x, y) {
+      const trashCanGeom = new THREE.CylinderGeometry(1.5, 2, 4, 8);
+      const trashCanMat = new THREE.MeshBasicMaterial({ color: 0x696969 });
+      const trashCan = new THREE.Mesh(trashCanGeom, trashCanMat);
+      trashCan.position.set(x, y, 2);
+      trashCan.userData.isTrashCan = true;
+      scene.add(trashCan);
+      decorationMeshes.push({ mesh: trashCan, material: trashCanMat });
+    }
+    
+    // Texture creation functions
+    function createBuildingTexture(baseColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color
+      ctx.fillStyle = `#${baseColor.toString(16).padStart(6, '0')}`;
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add texture variation
+      for (let i = 0; i < 200; i++) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.1})`;
+        ctx.fillRect(
+          Math.random() * 256,
+          Math.random() * 256,
+          Math.random() * 5 + 1,
+          Math.random() * 5 + 1
+        );
+      }
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    function createFoundationTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Concrete base
+      ctx.fillStyle = '#4a4a4a';
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add texture
+      for (let i = 0; i < 100; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.05})`;
+        ctx.fillRect(
+          Math.random() * 256,
+          Math.random() * 256,
+          Math.random() * 8 + 2,
+          Math.random() * 8 + 2
+        );
+      }
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    function createRoofTexture(baseColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color
+      ctx.fillStyle = `#${baseColor.toString(16).padStart(6, '0')}`;
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Add roof texture (shingles or tiles)
+      for (let i = 0; i < 256; i += 16) {
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 256);
+        ctx.stroke();
+      }
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    function createWindowTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      
+      // Window glass
+      ctx.fillStyle = '#87ceeb';
+      ctx.fillRect(0, 0, 64, 64);
+      
+      // Window frame
+      ctx.strokeStyle = '#4a4a4a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2, 2, 60, 60);
+      
+      // Window cross
+      ctx.beginPath();
+      ctx.moveTo(32, 2);
+      ctx.lineTo(32, 62);
+      ctx.moveTo(2, 32);
+      ctx.lineTo(62, 32);
+      ctx.stroke();
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    function createDoorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      
+      // Door
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(0, 0, 32, 64);
+      
+      // Door handle
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(24, 32, 4, 4);
+      
+      // Door panels
+      ctx.strokeStyle = '#4a3020';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(4, 4, 24, 28);
+      ctx.strokeRect(4, 36, 24, 24);
+      
+      return new THREE.CanvasTexture(canvas);
     }
 
     for (let row = 0; row <= gridH; row++) {
@@ -834,23 +1589,425 @@
       window.questManager = questManager;
     }
 
+    // Enhanced Central Plaza with detailed environment
     const plaza = new THREE.Mesh(
       new THREE.PlaneGeometry(blockW * 0.8, blockH * 0.7),
-      new THREE.MeshBasicMaterial({ color: 0x228b22 })
+      new THREE.MeshBasicMaterial({ 
+        color: 0x228b22,
+        map: createPlazaTexture()
+      })
     );
     plaza.position.set(0, 0, -0.005);
+    plaza.userData.isPlaza = true;
     scene.add(plaza);
     window.plazaMesh = plaza;
     const plazaMaterial = plaza.material;
     
-    // Debug: Log that city map is created
-    console.log(`City map created: ${buildingMeshes.length} buildings, ${streetMeshes.length} streets, plaza at (0,0)`);
-    console.log(`Scene children count: ${scene.children.length}`);
-    console.log(`First building color: ${buildingMeshes[0]?.material?.color?.getHex()}`);
-    console.log(`First street color: ${streetMeshes[0]?.material?.color?.getHex()}`);
-    if (typeof window.tryLoadCppInterior === 'function') {
-      window.tryLoadCppInterior(loaded => { if (loaded) console.log('C++ interior (WASM) loaded'); });
+    // Add plaza decorations
+    createPlazaDecorations();
+    
+    function createPlazaDecorations() {
+      // Central fountain
+      createFountain(0, 0);
+      
+      // Benches around plaza
+      const benchPositions = [
+        { x: -50, y: 0, rotation: Math.PI / 2 },
+        { x: 50, y: 0, rotation: -Math.PI / 2 },
+        { x: 0, y: -40, rotation: 0 },
+        { x: 0, y: 40, rotation: Math.PI }
+      ];
+      
+      benchPositions.forEach(pos => {
+        createBench(pos.x, pos.y, pos.rotation);
+      });
+      
+      // Trees around plaza perimeter
+      const treePositions = [
+        { x: -80, y: -60 }, { x: 80, y: -60 },
+        { x: -80, y: 60 }, { x: 80, y: 60 },
+        { x: -100, y: 0 }, { x: 100, y: 0 },
+        { x: 0, y: -80 }, { x: 0, y: 80 }
+      ];
+      
+      treePositions.forEach(pos => {
+        createTree(pos.x, pos.y);
+      });
+      
+      // Flower beds
+      const flowerBedPositions = [
+        { x: -40, y: -30 }, { x: 40, y: -30 },
+        { x: -40, y: 30 }, { x: 40, y: 30 }
+      ];
+      
+      flowerBedPositions.forEach(pos => {
+        createFlowerBed(pos.x, pos.y);
+      });
+      
+      // Street lamps around plaza
+      const lampPositions = [
+        { x: -60, y: -45 }, { x: 60, y: -45 },
+        { x: -60, y: 45 }, { x: 60, y: 45 },
+        { x: -70, y: 0 }, { x: 70, y: 0 },
+        { x: 0, y: -55 }, { x: 0, y: 55 }
+      ];
+      
+      lampPositions.forEach(pos => {
+        createStreetLamp(pos.x, pos.y);
+      });
     }
+    
+    function createFountain(x, y) {
+      // Fountain base
+      const baseGeom = new THREE.CylinderGeometry(15, 20, 3, 16);
+      const baseMat = new THREE.MeshBasicMaterial({ color: 0x8b7355 });
+      const base = new THREE.Mesh(baseGeom, baseMat);
+      base.position.set(x, y, 1.5);
+      base.userData.isFountain = true;
+      scene.add(base);
+      decorationMeshes.push({ mesh: base, material: baseMat });
+      
+      // Fountain pool
+      const poolGeom = new THREE.CylinderGeometry(25, 25, 1, 16);
+      const poolMat = new THREE.MeshBasicMaterial({ 
+        color: 0x4682b4,
+        transparent: true,
+        opacity: 0.7
+      });
+      const pool = new THREE.Mesh(poolGeom, poolMat);
+      pool.position.set(x, y, 0.5);
+      pool.userData.isFountain = true;
+      scene.add(pool);
+      decorationMeshes.push({ mesh: pool, material: poolMat });
+      
+      // Water effect (animated sphere)
+      const waterGeom = new THREE.SphereGeometry(8, 8, 8);
+      const waterMat = new THREE.MeshBasicMaterial({ 
+        color: 0x87ceeb,
+        transparent: true,
+        opacity: 0.6
+      });
+      const water = new THREE.Mesh(waterGeom, waterMat);
+      water.position.set(x, y, 5);
+      water.userData.isFountain = true;
+      scene.add(water);
+      decorationMeshes.push({ mesh: water, material: waterMat });
+      
+      // Animate water
+      function animateWater() {
+        water.scale.setScalar(1 + Math.sin(Date.now() * 0.002) * 0.1);
+        water.position.y = 5 + Math.sin(Date.now() * 0.003) * 0.5;
+      }
+      
+      // Add to animation loop
+      const originalLoop = window.loop;
+      window.loop = function(time) {
+        if (originalLoop) originalLoop(time);
+        animateWater();
+      };
+    }
+    
+    function createBench(x, y, rotation) {
+      // Bench seat
+      const seatGeom = new THREE.BoxGeometry(8, 2, 3);
+      const seatMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+      const seat = new THREE.Mesh(seatGeom, seatMat);
+      seat.position.set(x, y, 2);
+      seat.rotation.z = rotation;
+      seat.userData.isBench = true;
+      scene.add(seat);
+      decorationMeshes.push({ mesh: seat, material: seatMat });
+      
+      // Bench back
+      const backGeom = new THREE.BoxGeometry(8, 0.5, 4);
+      const backMat = new THREE.MeshBasicMaterial({ color: 0x654321 });
+      const back = new THREE.Mesh(backGeom, backMat);
+      back.position.set(x, y, 3.5);
+      back.rotation.z = rotation;
+      back.userData.isBench = true;
+      scene.add(back);
+      decorationMeshes.push({ mesh: back, material: backMat });
+    }
+    
+    function createFlowerBed(x, y) {
+      // Flower bed border
+      const borderGeom = new THREE.BoxGeometry(12, 12, 1);
+      const borderMat = new THREE.MeshBasicMaterial({ color: 0x8b4513 });
+      const border = new THREE.Mesh(borderGeom, borderMat);
+      border.position.set(x, y, 0.5);
+      border.userData.isFlowerBed = true;
+      scene.add(border);
+      decorationMeshes.push({ mesh: border, material: borderMat });
+      
+      // Flowers
+      const flowerColors = [0xff69b4, 0xff6347, 0xffd700, 0x9370db, 0xff1493];
+      for (let i = 0; i < 8; i++) {
+        const flowerGeom = new THREE.SphereGeometry(1, 6, 6);
+        const flowerColor = flowerColors[i % flowerColors.length];
+        const flowerMat = new THREE.MeshBasicMaterial({ color: flowerColor });
+        const flower = new THREE.Mesh(flowerGeom, flowerMat);
+        
+        const angle = (i / 8) * Math.PI * 2;
+        const radius = 4;
+        flower.position.set(
+          x + Math.cos(angle) * radius,
+          y + Math.sin(angle) * radius,
+          1.5
+        );
+        flower.userData.isFlower = true;
+        scene.add(flower);
+        decorationMeshes.push({ mesh: flower, material: flowerMat });
+      }
+    }
+    
+    function createStreetLamp(x, y) {
+      // Lamp pole
+      const poleGeom = new THREE.CylinderGeometry(0.3, 0.3, 12);
+      const poleMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+      const pole = new THREE.Mesh(poleGeom, poleMat);
+      pole.position.set(x, y, 6);
+      pole.userData.isStreetLight = true;
+      scene.add(pole);
+      decorationMeshes.push({ mesh: pole, material: poleMat });
+      
+      // Lamp fixture
+      const lampGeom = new THREE.SphereGeometry(1, 8, 8);
+      const lampMat = new THREE.MeshBasicMaterial({ 
+        color: 0xffff00,
+        transparent: true,
+        opacity: 0.8
+      });
+      const lamp = new THREE.Mesh(lampGeom, lampMat);
+      lamp.position.set(x, y, 11);
+      lamp.userData.isStreetLight = true;
+      scene.add(lamp);
+      decorationMeshes.push({ mesh: lamp, material: lampMat });
+    }
+    
+    function createPlazaTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Grass base
+      ctx.fillStyle = '#228b22';
+      ctx.fillRect(0, 0, 512, 512);
+      
+      // Add grass texture variation
+      for (let i = 0; i < 500; i++) {
+        const greenShade = Math.floor(Math.random() * 30) - 15;
+        ctx.fillStyle = `rgba(34, ${136 + greenShade}, 34, 0.8)`;
+        ctx.fillRect(
+          Math.random() * 512,
+          Math.random() * 512,
+          Math.random() * 3 + 1,
+          Math.random() * 3 + 1
+        );
+      }
+      
+      // Add path patterns
+      ctx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        ctx.moveTo(256, 256);
+        ctx.lineTo(
+          256 + Math.cos(i * Math.PI / 4) * 200,
+          256 + Math.sin(i * Math.PI / 4) * 200
+        );
+        ctx.stroke();
+      }
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    // Enhanced city with weather integration and dynamic effects
+    function updateCityGraphics(weather) {
+      // Update street colors based on weather
+      streetMeshes.forEach(street => {
+        if (weather.type === 'rain') {
+          street.material.color.setHex(0x1a1a1a); // Darker when wet
+        } else if (weather.type === 'snow') {
+          street.material.color.setHex(0xe0e0e0); // Snow covered
+        } else {
+          street.material.color.setHex(0x2d2d2d); // Normal
+        }
+      });
+      
+      // Update sidewalk colors
+      sidewalkMeshes.forEach(sidewalk => {
+        if (weather.type === 'rain') {
+          sidewalk.material.color.setHex(0x606060); // Wet concrete
+        } else if (weather.type === 'snow') {
+          sidewalk.material.color.setHex(0xf0f0f0); // Snow covered
+        } else {
+          sidewalk.material.color.setHex(0x808080); // Normal
+        }
+      });
+      
+      // Update building colors based on weather
+      buildingMeshes.forEach(building => {
+        if (weather.type === 'rain') {
+          // Make buildings look darker when wet
+          const currentColor = new THREE.Color(building.material.color.getHex());
+          currentColor.multiplyScalar(0.8);
+          building.material.color.setHex(currentColor.getHex());
+        } else if (weather.type === 'snow') {
+          // Add slight white tint for snow
+          const currentColor = new THREE.Color(building.material.color.getHex());
+          currentColor.lerp(new THREE.Color(0xffffff), 0.1);
+          building.material.color.setHex(currentColor.getHex());
+        }
+      });
+      
+      // Update plaza
+      if (window.plazaMesh) {
+        if (weather.type === 'snow') {
+          window.plazaMesh.material.color.setHex(0xf0fff0); // Snowy grass
+        } else {
+          window.plazaMesh.material.color.setHex(0x228b22); // Normal grass
+        }
+      }
+      
+      // Update street lights based on time of day
+      decorationMeshes.forEach(decoration => {
+        if (decoration.mesh.userData.isStreetLight) {
+          const hour = new Date().getHours();
+          const isNight = hour < 6 || hour > 20;
+          
+          if (isNight) {
+            decoration.mesh.material.opacity = 1.0;
+            decoration.mesh.material.emissive = new THREE.Color(0xffff00);
+            decoration.mesh.material.emissiveIntensity = 0.3;
+          } else {
+            decoration.mesh.material.opacity = 0.6;
+            decoration.mesh.material.emissive = new THREE.Color(0x000000);
+            decoration.mesh.material.emissiveIntensity = 0;
+          }
+        }
+      });
+    }
+    
+    // Add weather effects to city
+    function addWeatherEffects() {
+      // Rain puddles on streets
+      if (window.weather && window.weather.type === 'rain') {
+        streetMeshes.forEach(street => {
+          createPuddle(street.mesh.position.x, street.mesh.position.y);
+        });
+      }
+      
+      // Snow accumulation
+      if (window.weather && window.weather.type === 'snow') {
+        createSnowAccumulation();
+      }
+      
+      // Wind effects on trees
+      if (window.weather && window.weather.windSpeed > 5) {
+        animateTrees();
+      }
+    }
+    
+    function createPuddle(x, y) {
+      const puddleGeom = new THREE.CircleGeometry(Math.random() * 3 + 1, 8);
+      const puddleMat = new THREE.MeshBasicMaterial({ 
+        color: 0x4682b4,
+        transparent: true,
+        opacity: 0.3
+      });
+      const puddle = new THREE.Mesh(puddleGeom, puddleMat);
+      puddle.position.set(x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 20, 0.02);
+      puddle.userData.isPuddle = true;
+      scene.add(puddle);
+      decorationMeshes.push({ mesh: puddle, material: puddleMat });
+    }
+    
+    function createSnowAccumulation() {
+      // Add snow to rooftops
+      buildingMeshes.forEach(building => {
+        if (building.mesh.userData.isBuilding && Math.random() > 0.7) {
+          const snowGeom = new THREE.PlaneGeometry(10, 10);
+          const snowMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.8
+          });
+          const snow = new THREE.Mesh(snowGeom, snowMat);
+          snow.position.copy(building.mesh.position);
+          snow.position.z += 0.01;
+          snow.userData.isSnow = true;
+          scene.add(snow);
+          decorationMeshes.push({ mesh: snow, material: snowMat });
+        }
+      });
+    }
+    
+    function animateTrees() {
+      decorationMeshes.forEach(decoration => {
+        if (decoration.mesh.userData.isTree) {
+          // Simple wind animation
+          const windStrength = window.weather.windSpeed / 20;
+          decoration.mesh.rotation.z = Math.sin(Date.now() * 0.001) * windStrength * 0.1;
+        }
+      });
+    }
+    
+    // Add city ambient sounds
+    function createCityAmbience() {
+      // Traffic sounds near streets
+      streetMeshes.forEach(street => {
+        if (Math.random() > 0.8) {
+          createTrafficSound(street.mesh.position.x, street.mesh.position.y);
+        }
+      });
+      
+      // Bird sounds near trees
+      decorationMeshes.forEach(decoration => {
+        if (decoration.mesh.userData.isTree && Math.random() > 0.7) {
+          createBirdSound(decoration.mesh.position.x, decoration.mesh.position.y);
+        }
+      });
+    }
+    
+    function createTrafficSound(x, y) {
+      // Placeholder for traffic sound effect
+      if (window.playSound) {
+        window.playSound('traffic_ambient', { x, y, volume: 0.3, loop: true });
+      }
+    }
+    
+    function createBirdSound(x, y) {
+      // Placeholder for bird sound effect
+      if (window.playSound) {
+        window.playSound('bird_chirp', { x, y, volume: 0.2, loop: false });
+      }
+    }
+    
+    // Initialize city enhancements
+    function initializeCityEnhancements() {
+      // Update graphics based on current weather
+      if (window.weather) {
+        updateCityGraphics(window.weather);
+      }
+      
+      // Add weather effects
+      addWeatherEffects();
+      
+      // Create city ambience
+      createCityAmbience();
+      
+      // Listen for weather changes
+      if (window.addEventListener) {
+        window.addEventListener('weatherChanged', (event) => {
+          updateCityGraphics(event.detail);
+          addWeatherEffects();
+        });
+      }
+    }
+    
+    // Call initialization
+    initializeCityEnhancements();
 
     // —— Hangout zones (name, x, y, radius) — 10km scale ——
     const zoneR = 400;
@@ -3844,6 +5001,618 @@
     document.getElementById('codex-close').addEventListener('click', () => {
       document.getElementById('codex-ui').style.display = 'none';
     });
+
+    // Initialize Enhanced Systems
+    function initializeEnhancedSystems() {
+      console.log('Initializing Enhanced Game Systems...');
+      
+      // Initialize Mission System
+      if (window.missionSystem) {
+        window.missionSystem.load();
+        console.log('Mission System initialized');
+      }
+      
+      // Initialize Enhanced Leveling System
+      if (window.enhancedLeveling) {
+        window.enhancedLeveling.loadPlayerData();
+        console.log('Enhanced Leveling System initialized');
+      }
+      
+      // Initialize Advanced Graphics System
+      if (window.advancedGraphics) {
+        window.advancedGraphics.lightingSystem.addToScene(scene);
+        console.log('Advanced Graphics System initialized');
+      }
+      
+      // Initialize Interactive House System
+      if (window.interactiveHouseSystem) {
+        window.interactiveHouseSystem.loadHouseData();
+        console.log('Interactive House System initialized');
+      }
+      
+      // Initialize Enhanced Map System
+      if (window.enhancedMapSystem) {
+        window.enhancedMapSystem.loadMapData();
+        window.enhancedMapSystem.switchToMap('world');
+        console.log('Enhanced Map System initialized');
+      }
+      
+      // Setup UI Event Listeners for Enhanced Systems
+      setupEnhancedUIListeners();
+      
+      console.log('All Enhanced Systems initialized successfully!');
+    }
+    
+    function setupEnhancedUIListeners() {
+      // Mission System UI
+      const missionsBtn = document.getElementById('missions-btn');
+      const missionUI = document.getElementById('mission-ui');
+      const missionUIClose = document.getElementById('mission-ui-close');
+      
+      if (missionsBtn && missionUI) {
+        missionsBtn.addEventListener('click', () => {
+          missionUI.style.display = missionUI.style.display === 'none' ? 'block' : 'none';
+          if (missionUI.style.display === 'block') {
+            updateMissionUI();
+          }
+        });
+      }
+      
+      if (missionUIClose) {
+        missionUIClose.addEventListener('click', () => {
+          missionUI.style.display = 'none';
+        });
+      }
+      
+      // Enhanced Leveling UI
+      const levelingBtn = document.getElementById('leveling-btn');
+      const levelingUI = document.getElementById('leveling-ui');
+      const levelingUIClose = document.getElementById('leveling-ui-close');
+      
+      if (levelingBtn && levelingUI) {
+        levelingBtn.addEventListener('click', () => {
+          levelingUI.style.display = levelingUI.style.display === 'none' ? 'block' : 'none';
+          if (levelingUI.style.display === 'block') {
+            updateLevelingUI();
+          }
+        });
+      }
+      
+      if (levelingUIClose) {
+        levelingUIClose.addEventListener('click', () => {
+          levelingUI.style.display = 'none';
+        });
+      }
+      
+      // Advanced Graphics UI
+      const graphicsBtn = document.getElementById('graphics-btn');
+      const graphicsUI = document.getElementById('graphics-ui');
+      const graphicsUIClose = document.getElementById('graphics-ui-close');
+      
+      if (graphicsBtn && graphicsUI) {
+        graphicsBtn.addEventListener('click', () => {
+          graphicsUI.style.display = graphicsUI.style.display === 'none' ? 'block' : 'none';
+        });
+      }
+      
+      if (graphicsUIClose) {
+        graphicsUIClose.addEventListener('click', () => {
+          graphicsUI.style.display = 'none';
+        });
+      }
+      
+      // Interactive House System UI
+      const housesBtn = document.getElementById('houses-btn');
+      const houseUI = document.getElementById('house-ui');
+      const houseUIClose = document.getElementById('house-ui-close');
+      
+      if (housesBtn && houseUI) {
+        housesBtn.addEventListener('click', () => {
+          houseUI.style.display = houseUI.style.display === 'none' ? 'block' : 'none';
+          if (houseUI.style.display === 'block') {
+            updateHouseUI();
+          }
+        });
+      }
+      
+      if (houseUIClose) {
+        houseUIClose.addEventListener('click', () => {
+          houseUI.style.display = 'none';
+        });
+      }
+      
+      // Enhanced Map System UI
+      const enhancedMapBtn = document.getElementById('enhanced-map-btn');
+      const enhancedMapUI = document.getElementById('enhanced-map-ui');
+      const enhancedMapUIClose = document.getElementById('enhanced-map-ui-close');
+      
+      if (enhancedMapBtn && enhancedMapUI) {
+        enhancedMapBtn.addEventListener('click', () => {
+          enhancedMapUI.style.display = enhancedMapUI.style.display === 'none' ? 'block' : 'none';
+          if (enhancedMapUI.style.display === 'block') {
+            initializeEnhancedMap();
+          }
+        });
+      }
+      
+      if (enhancedMapUIClose) {
+        enhancedMapUIClose.addEventListener('click', () => {
+          enhancedMapUI.style.display = 'none';
+        });
+      }
+      
+      // Graphics Settings Listeners
+      setupGraphicsSettingsListeners();
+      
+      // Map Controls Listeners
+      setupMapControlsListeners();
+      
+      // House System Listeners
+      setupHouseSystemListeners();
+    }
+    
+    function setupGraphicsSettingsListeners() {
+      // Shader toggles
+      const shaderToggles = ['water-shaders', 'metallic-shaders', 'glow-effects', 'terrain-shaders'];
+      shaderToggles.forEach(toggleId => {
+        const toggle = document.getElementById(toggleId);
+        if (toggle) {
+          toggle.addEventListener('change', (e) => {
+            console.log(`Shader toggle ${toggleId}: ${e.target.checked}`);
+            // Apply shader settings
+            if (window.advancedGraphics) {
+              // Update shader visibility based on settings
+            }
+          });
+        }
+      });
+      
+      // Lighting controls
+      const ambientLight = document.getElementById('ambient-light');
+      const sunIntensity = document.getElementById('sun-intensity');
+      
+      if (ambientLight) {
+        ambientLight.addEventListener('input', (e) => {
+          if (window.advancedGraphics && window.advancedGraphics.lightingSystem) {
+            const ambientLightObj = window.advancedGraphics.lightingSystem.lights.get('ambient');
+            if (ambientLightObj) {
+              ambientLightObj.intensity = parseFloat(e.target.value);
+            }
+          }
+        });
+      }
+      
+      if (sunIntensity) {
+        sunIntensity.addEventListener('input', (e) => {
+          if (window.advancedGraphics && window.advancedGraphics.lightingSystem) {
+            const sunLight = window.advancedGraphics.lightingSystem.lights.get('sun');
+            if (sunLight) {
+              sunLight.intensity = parseFloat(e.target.value);
+            }
+          }
+        });
+      }
+      
+      // Graphics quality
+      const graphicsQuality = document.getElementById('graphics-quality');
+      if (graphicsQuality) {
+        graphicsQuality.addEventListener('change', (e) => {
+          console.log(`Graphics quality set to: ${e.target.value}`);
+          // Apply quality settings
+          applyGraphicsQuality(e.target.value);
+        });
+      }
+    }
+    
+    function setupMapControlsListeners() {
+      // Map selection buttons
+      const mapBtns = document.querySelectorAll('.map-btn');
+      mapBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const mapId = e.target.getAttribute('data-map');
+          if (window.enhancedMapSystem) {
+            window.enhancedMapSystem.switchToMap(mapId);
+            updateMapCanvas();
+          }
+        });
+      });
+      
+      // Layer toggles
+      const layerToggles = document.querySelectorAll('.layer-toggle');
+      layerToggles.forEach(toggle => {
+        toggle.addEventListener('change', (e) => {
+          const layerName = e.target.getAttribute('data-layer');
+          if (window.enhancedMapSystem) {
+            window.enhancedMapSystem.toggleLayer(layerName);
+            updateMapCanvas();
+          }
+        });
+      });
+      
+      // Map zoom controls
+      const mapZoomIn = document.getElementById('map-zoom-in');
+      const mapZoomOut = document.getElementById('map-zoom-out');
+      
+      if (mapZoomIn) {
+        mapZoomIn.addEventListener('click', () => {
+          if (window.enhancedMapSystem) {
+            window.enhancedMapSystem.zoomMap(1);
+            updateMapCanvas();
+          }
+        });
+      }
+      
+      if (mapZoomOut) {
+        mapZoomOut.addEventListener('click', () => {
+          if (window.enhancedMapSystem) {
+            window.enhancedMapSystem.zoomMap(-1);
+            updateMapCanvas();
+          }
+        });
+      }
+      
+      // Center map button
+      const centerMapBtn = document.getElementById('center-map-btn');
+      if (centerMapBtn) {
+        centerMapBtn.addEventListener('click', () => {
+          if (window.enhancedMapSystem) {
+            window.enhancedMapSystem.centerMapOnPlayer();
+            updateMapCanvas();
+          }
+        });
+      }
+      
+      // Toggle minimap button
+      const toggleMinimapBtn = document.getElementById('toggle-minimap-btn');
+      if (toggleMinimapBtn) {
+        toggleMinimapBtn.addEventListener('click', () => {
+          if (window.enhancedMapSystem && window.enhancedMapSystem.minimap) {
+            window.enhancedMapSystem.minimap.toggleVisibility();
+          }
+        });
+      }
+    }
+    
+    function setupHouseSystemListeners() {
+      // Leave house button
+      const leaveHouseBtn = document.getElementById('leave-house-btn');
+      if (leaveHouseBtn) {
+        leaveHouseBtn.addEventListener('click', () => {
+          if (window.interactiveHouseSystem) {
+            window.interactiveHouseSystem.leaveHouse();
+            updateHouseUI();
+          }
+        });
+      }
+      
+      // Build house button
+      const buildHouseBtn = document.getElementById('build-house-btn');
+      const houseTypeSelect = document.getElementById('house-type-select');
+      
+      if (buildHouseBtn && houseTypeSelect) {
+        buildHouseBtn.addEventListener('click', () => {
+          const houseType = houseTypeSelect.value;
+          const houseCosts = {
+            'small_house': 100,
+            'medium_house': 250,
+            'large_house': 500,
+            'mansion': 1500
+          };
+          
+          const cost = houseCosts[houseType];
+          if (window.toolbelt && window.toolbelt.gold >= cost) {
+            // Build the house
+            if (window.interactiveHouseSystem) {
+              const position = { x: player.position.x, y: player.position.y };
+              const house = window.interactiveHouseSystem.createHouse(houseType, position);
+              if (house) {
+                window.toolbelt.removeGold(cost);
+                updateHouseUI();
+                showNotification('House Built', `Successfully built a ${houseType.replace('_', ' ')}!`, 'success');
+              }
+            }
+          } else {
+            showNotification('Insufficient Gold', `You need ${cost} gold to build this house.`, 'error');
+          }
+        });
+      }
+    }
+    
+    function updateMissionUI() {
+      if (!window.missionSystem) return;
+      
+      const activeMissionsList = document.getElementById('active-missions-list');
+      const availableMissionsList = document.getElementById('available-missions-list');
+      
+      if (activeMissionsList) {
+        const activeMissions = window.missionSystem.getActiveMissions();
+        activeMissionsList.innerHTML = activeMissions.length > 0 ? 
+          activeMissions.map(mission => `
+            <div style="background: rgba(255,215,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(255,215,0,0.3);">
+              <div style="color: #ffd700; font-weight: 600; font-size: 14px; margin-bottom: 4px;">${mission.name}</div>
+              <div style="color: #ffa500; font-size: 12px; margin-bottom: 4px;">${mission.description}</div>
+              <div style="color: #fff; font-size: 11px;">Current Stage: ${mission.currentStage.name}</div>
+              <div style="margin-top: 8px;">
+                <button onclick="window.missionSystem.getMissionProgress('${mission.id}')" style="background: rgba(255,215,0,0.2); color: #ffd700; border: 1px solid rgba(255,215,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">View Progress</button>
+              </div>
+            </div>
+          `).join('') : '<div style="color: #888; font-size: 12px; text-align: center;">No active missions</div>';
+      }
+      
+      if (availableMissionsList) {
+        const availableMissions = window.missionSystem.getAvailableMissions();
+        availableMissionsList.innerHTML = availableMissions.length > 0 ?
+          availableMissions.map(mission => `
+            <div style="background: rgba(255,165,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(255,165,0,0.3);">
+              <div style="color: #ffa500; font-weight: 600; font-size: 14px; margin-bottom: 4px;">${mission.name}</div>
+              <div style="color: #ff8c00; font-size: 12px; margin-bottom: 4px;">${mission.description}</div>
+              <div style="color: #fff; font-size: 11px;">Difficulty: ${mission.difficulty} · Est. Time: ${mission.estimatedTime}</div>
+              <div style="margin-top: 8px;">
+                <button onclick="window.startMission('${mission.id}')" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">Start Mission</button>
+              </div>
+            </div>
+          `).join('') : '<div style="color: #888; font-size: 12px; text-align: center;">No available missions</div>';
+      }
+    }
+    
+    function updateLevelingUI() {
+      if (!window.enhancedLeveling) return;
+      
+      const enhancedPlayerLevel = document.getElementById('enhanced-player-level');
+      const enhancedPlayerXP = document.getElementById('enhanced-player-xp');
+      const enhancedPlayerXPBar = document.getElementById('enhanced-player-xp-bar');
+      const levelUpPoints = document.getElementById('level-up-points');
+      const combatStatsList = document.getElementById('combat-stats-list');
+      const skillMasteryList = document.getElementById('skill-mastery-list');
+      const statAllocation = document.getElementById('stat-allocation');
+      
+      // Update player level and XP
+      if (enhancedPlayerLevel) {
+        enhancedPlayerLevel.textContent = window.enhancedLeveling.getPlayerLevel();
+      }
+      
+      if (enhancedPlayerXP) {
+        const totalXP = window.enhancedLeveling.getTotalXP();
+        const xpToNext = window.enhancedLeveling.getXPToNextLevel();
+        enhancedPlayerXP.textContent = `${totalXP} / ${xpToNext} XP`;
+      }
+      
+      if (enhancedPlayerXPBar) {
+        const totalXP = window.enhancedLeveling.getTotalXP();
+        const xpToNext = window.enhancedLeveling.getXPToNextLevel();
+        const progress = (totalXP / xpToNext) * 100;
+        enhancedPlayerXPBar.style.width = `${Math.min(100, progress)}%`;
+      }
+      
+      if (levelUpPoints) {
+        levelUpPoints.textContent = window.enhancedLeveling.getLevelUpPoints();
+      }
+      
+      // Update combat stats
+      if (combatStatsList) {
+        const stats = window.enhancedLeveling.getCombatStats();
+        combatStatsList.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+            <div style="color: #e6b3ff;">Health: ${Math.floor(stats.health.current)}/${stats.health.max}</div>
+            <div style="color: #e6b3ff;">Mana: ${Math.floor(stats.mana.current)}/${stats.mana.max}</div>
+            <div style="color: #e6b3ff;">Attack: ${Math.floor(stats.attackPower.current)}</div>
+            <div style="color: #e6b3ff;">Defense: ${Math.floor(stats.defense.current)}</div>
+            <div style="color: #e6b3ff;">Crit Chance: ${(stats.criticalChance.current * 100).toFixed(1)}%</div>
+            <div style="color: #e6b3ff;">Move Speed: ${stats.movementSpeed.current.toFixed(1)}</div>
+          </div>
+        `;
+      }
+      
+      // Update skill mastery
+      if (skillMasteryList) {
+        const skills = ['Strength', 'Defense', 'Ranged', 'Magic', 'Mining', 'Crafting', 'Stealth', 'Charisma'];
+        skillMasteryList.innerHTML = skills.map(skill => {
+          const level = window.enhancedLeveling.getSkillLevel(skill);
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(138,43,226,0.2);">
+              <span style="color: #e6b3ff; font-size: 11px;">${skill}</span>
+              <span style="color: #fff; font-size: 11px; font-weight: 600;">Lv ${level}</span>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // Update stat allocation
+      if (statAllocation) {
+        const points = window.enhancedLeveling.getLevelUpPoints();
+        statAllocation.innerHTML = points > 0 ? `
+          <div style="color: #ffa500; font-size: 11px; margin-bottom: 8px;">You have ${points} points to allocate</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button onclick="allocateStatPoints('health', 1)" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">+Health</button>
+            <button onclick="allocateStatPoints('mana', 1)" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">+Mana</button>
+            <button onclick="allocateStatPoints('stamina', 1)" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">+Stamina</button>
+            <button onclick="allocateStatPoints('attackPower', 1)" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">+Attack</button>
+          </div>
+        ` : '<div style="color: #888; font-size: 11px;">No points available</div>';
+      }
+    }
+    
+    function updateHouseUI() {
+      if (!window.interactiveHouseSystem) return;
+      
+      const currentHouseInfo = document.getElementById('current-house-info');
+      const availableHousesList = document.getElementById('available-houses-list');
+      const furnitureList = document.getElementById('furniture-list');
+      
+      // Update current house info
+      if (currentHouseInfo && window.interactiveHouseSystem.currentHouse) {
+        currentHouseInfo.style.display = 'block';
+        const house = window.interactiveHouseSystem.currentHouse;
+        document.getElementById('current-house-name').textContent = house.template.name;
+        document.getElementById('current-house-type').textContent = `Type: ${house.type}`;
+      } else if (currentHouseInfo) {
+        currentHouseInfo.style.display = 'none';
+      }
+      
+      // Update available houses
+      if (availableHousesList) {
+        const houses = Array.from(window.interactiveHouseSystem.houses.values());
+        availableHousesList.innerHTML = houses.length > 0 ? 
+          houses.map(house => `
+            <div style="background: rgba(255,165,0,0.1); padding: 8px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(255,165,0,0.3);">
+              <div style="color: #ffa500; font-size: 12px; font-weight: 600;">${house.template.name}</div>
+              <div style="color: #ccc; font-size: 10px;">Position: (${Math.floor(house.position.x)}, ${Math.floor(house.position.y)})</div>
+              <button onclick="window.enterHouse('${house.id}')" style="background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid rgba(255,165,0,0.4); padding: 4px 8px; border-radius: 4px; font-size: 9px; cursor: pointer; margin-top: 4px;">Enter</button>
+            </div>
+          `).join('') : '<div style="color: #888; font-size: 11px;">No houses available</div>';
+      }
+      
+      // Update furniture list
+      if (furnitureList && window.interactiveHouseSystem.currentHouse) {
+        const furniture = Array.from(window.interactiveHouseSystem.furnitureSystem.furniture.values());
+        furnitureList.innerHTML = furniture.length > 0 ?
+          furniture.map(item => `
+            <div style="background: rgba(255,165,0,0.1); padding: 6px; border-radius: 4px; margin-bottom: 4px; border: 1px solid rgba(255,165,0,0.3);">
+              <div style="color: #ffa500; font-size: 11px;">${item.template.name}</div>
+              <div style="color: #ccc; font-size: 9px;">Status: ${item.isOccupied ? 'Occupied' : 'Available'}</div>
+            </div>
+          `).join('') : '<div style="color: #888; font-size: 10px;">No furniture</div>';
+      }
+    }
+    
+    function initializeEnhancedMap() {
+      const canvas = document.getElementById('enhanced-map-canvas');
+      if (canvas && window.enhancedMapSystem) {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        updateMapCanvas();
+      }
+    }
+    
+    function updateMapCanvas() {
+      const canvas = document.getElementById('enhanced-map-canvas');
+      if (canvas && window.enhancedMapSystem && window.enhancedMapSystem.currentMap) {
+        const ctx = canvas.getContext('2d');
+        window.enhancedMapSystem.renderMap(canvas, window.enhancedMapSystem.currentMap.id);
+      }
+    }
+    
+    function applyGraphicsQuality(quality) {
+      // Apply graphics quality settings
+      switch (quality) {
+        case 'low':
+          // Reduce render quality
+          if (window.renderer) {
+            window.renderer.setPixelRatio(1);
+          }
+          break;
+        case 'medium':
+          // Balanced settings
+          if (window.renderer) {
+            window.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          }
+          break;
+        case 'high':
+          // High quality
+          if (window.renderer) {
+            window.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          }
+          break;
+        case 'ultra':
+          // Maximum quality
+          if (window.renderer) {
+            window.renderer.setPixelRatio(window.devicePixelRatio);
+          }
+          break;
+      }
+    }
+    
+    // Enhanced game loop updates
+    function enhancedGameLoop(time) {
+      // Update advanced graphics
+      if (window.advancedGraphics) {
+        window.updateGraphics(time);
+      }
+      
+      // Update house interiors
+      if (window.interactiveHouseSystem) {
+        window.interactiveHouseSystem.updateHouseInteriors(0.016);
+      }
+      
+      // Update minimap
+      if (window.enhancedMapSystem && window.enhancedMapSystem.minimap) {
+        const minimapCanvas = document.getElementById('minimap-canvas');
+        if (minimapCanvas && window.player) {
+          const ctx = minimapCanvas.getContext('2d');
+          const worldMap = window.enhancedMapSystem.maps.get('world');
+          window.enhancedMapSystem.minimap.render(ctx, worldMap, window.player.position);
+        }
+      }
+    }
+    
+    // Global notification function
+    window.showNotification = function(title, message, type = 'info') {
+      const colors = {
+        info: 'rgba(100,180,255,0.9)',
+        success: 'rgba(76,175,80,0.9)',
+        error: 'rgba(244,67,54,0.9)',
+        warning: 'rgba(255,152,0,0.9)',
+        levelup: 'rgba(138,43,226,0.9)',
+        skillup: 'rgba(0,150,136,0.9)',
+        unlock: 'rgba(255,193,7,0.9)',
+        achievement: 'rgba(255,215,0,0.9)'
+      };
+      
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 12px;
+        background: ${colors[type] || colors.info};
+        color: #fff;
+        padding: 16px 20px;
+        border-radius: 12px;
+        z-index: 10000;
+        min-width: 250px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        animation: slideInRight 0.3s ease;
+      `;
+      
+      notification.innerHTML = `
+        <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${title}</div>
+        <div style="font-size: 12px; opacity: 0.9;">${message}</div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 3000);
+    };
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Initialize enhanced systems after a short delay
+    setTimeout(initializeEnhancedSystems, 1000);
+    
+    // Add enhanced game loop to existing animation loop
+    const originalLoop = window.loop;
+    if (originalLoop) {
+      window.loop = function(time) {
+        originalLoop(time);
+        enhancedGameLoop(time);
+      };
+    }
 
   </script>
 </body>
